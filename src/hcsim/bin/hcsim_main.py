@@ -3,14 +3,14 @@
 import numpy as np
 import pandas as pd
 import argparse
-from hcsim import HCSim
+from hcsim import HCSIM
 import inspect
 
 def create_hcsim_from_args(args):
     """
-    from args buid HCSim
+    from args buid HCSIM
     """
-    hcsim_params = inspect.signature(HCSim.__init__).parameters
+    hcsim_params = inspect.signature(HCSIM.__init__).parameters
 
     # filter None value and same params
     hcsim_args = {
@@ -20,7 +20,7 @@ def create_hcsim_from_args(args):
     }
 
     # create HCSim class
-    return HCSim(**hcsim_args)
+    return HCSIM(**hcsim_args)
 
 def sim(args):
     # run hcsim full pipeline

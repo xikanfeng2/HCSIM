@@ -20,7 +20,7 @@ from .utils import ProgressBar, bcolors
 
 pd.options.mode.chained_assignment = None
 
-class HCSim:
+class HCSIM:
     def __init__(self, 
                 ref_genome: str, 
                 snp_list: str = None, 
