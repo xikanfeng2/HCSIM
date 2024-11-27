@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "SCSilicon2"
+version = "1.0.1"
+authors = [
+  { name="Xikang Feng", email="fxk@nwpu.edu.cn" },
+]
+description = "SCSilicon2: a single-cell genomics simulator which cost-effectively simulates single-cell genomics reads with haplotype-specific copy number annotation."
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/xikanfeng2/SCSilicon2"
+Issues = "https://github.com/xikanfeng2/SCSilicon2/issues"
