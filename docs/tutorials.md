@@ -30,7 +30,7 @@
 <a name="setup"></a>
 ## Installation
 
-[HCSIM](https://bioconda.github.io/recipes/chisel/README.html) is distributed as a [PyPI](https://pypi.org) package, and can be installed either from pip or directly from source.
+[HCSIM](https://hcsim.readthedocs.io/en/latest/index.html) is distributed as a [PyPI](https://pypi.org/project/HCSIM/) package, and can be installed either from pip or directly from source.
 
 <a name="env"></a>
 ### Creation of python virtual env
