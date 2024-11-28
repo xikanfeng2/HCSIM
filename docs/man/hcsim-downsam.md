@@ -1,3 +1,5 @@
+# hcsim downsam
+
 `hcsim downsam` command to run downsampling from clone bam file to generate cell bams.
 
 ```shell

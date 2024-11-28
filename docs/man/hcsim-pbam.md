@@ -1,3 +1,5 @@
+# hcsim pbam
+
 `hcsim pbam` command to process cell bams, including sort, markduplications and add reads group, using `picard` tools.
 
 ```shell

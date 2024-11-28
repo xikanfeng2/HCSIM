@@ -1,3 +1,5 @@
+# hcsim gprofile
+
 `hcsim gprofile` command to generate the CNA profile base on the given paramaters.
 
 ```shell

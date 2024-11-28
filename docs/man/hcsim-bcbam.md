@@ -1,3 +1,5 @@
+# hcsim bcbam
+
 `hcsim bcbam` command to generate a barcode bam from all cell bams. This command is achieved using [`chisel_prep`](https://github.com/raphael-group/chisel/blob/master/man/chisel-prep.md) scripts.
 
 ```shell

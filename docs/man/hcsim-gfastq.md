@@ -1,3 +1,5 @@
+# hcsim gfastq
+
 `hcsim gfastq` command to generate fastq file for each clone using `wgsim`.
 
 ```shell

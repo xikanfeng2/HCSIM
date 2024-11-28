@@ -1,3 +1,5 @@
+# hcsim align
+
 `hcsim align` command to run alignment process for each clone using `bwa`.
 
 ```shell

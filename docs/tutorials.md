@@ -120,9 +120,9 @@ HCSIM also requires few standard additional tools, which should be included in `
 
 HCSIM requires 3 input data:
 
-1. **A reference genome file with fasta format (required).**  The most-used human reference genome are available at [GRC](https://www.ncbi.nlm.nih.gov/grc/human) or [UCSC](http://hgdownload.cse.ucsc.edu/downloads.html#human). Moreover, the reference genome `${REF}.fa` must be index by SAMtools (i.e. `samtools faidx ${REF}.fa`) and a dictionary must be created (`i.e. samtools dict ${REF}.fa > ${REF}.dict`) in the same folder as `${REF}`. 
+1. **A reference genome file with fasta format (required).**  The most-used human reference genome are available at [GRC](https://www.ncbi.nlm.nih.gov/grc/human) or [UCSC](https://hgdownload.soe.ucsc.edu/downloads.html). Moreover, the reference genome `${REF}.fa` must be index by SAMtools (i.e. `samtools faidx ${REF}.fa`) and a dictionary must be created (`i.e. samtools dict ${REF}.fa > ${REF}.dict`) in the same folder as `${REF}`. 
 
-2. **A list of known germline SNPs (optional).** This list is optional and SNPs can be introduced in arbitrary positions of the genome. However, we strongly suggest to obtain the lsit from known databases. One of the most used database of germline SNPs is [dbSNP](https://www.ncbi.nlm.nih.gov/projects/SNP/) and the common germline SNPs can be downloaded from the most recent realease [here](https://www.ncbi.nlm.nih.gov/variation/docs/human_variation_vcf/). In order to consider only a subset of the positions to reduce the number of SNPs, the user should sample only some of the positions in this list according to estimated frequency of SNPs (typically 1 SNP every 1000 genomic positions along the entire genome. HCSIM requires the list to be given in a tab-separate file with the following fields:
+2. **A list of known germline SNPs (optional).** This list is optional and SNPs can be introduced in arbitrary positions of the genome. However, we strongly suggest to obtain the lsit from known databases. One of the most used database of germline SNPs is [dbSNP](https://genome.ucsc.edu/cgi-bin/hgTables?hgsid=2388304805_pDcvxm8EAdslKzcosQNlKBXZWgUG&clade=mammal&org=Human&db=hs1&hgta_group=varRep&hgta_track=hub_3671779_censat&hgta_table=0&hgta_regionType=genome&position=chr9%3A145%2C458%2C455-145%2C495%2C201&hgta_outputType=primaryTable&hgta_outFileName=) and the common germline SNPs can be downloaded from the most recent realease [here](https://www.ncbi.nlm.nih.gov/variation/docs/human_variation_vcf/). In order to consider only a subset of the positions to reduce the number of SNPs, the user should sample only some of the positions in this list according to estimated frequency of SNPs (typically 1 SNP every 1000 genomic positions along the entire genome. HCSIM requires the list to be given in a tab-separate file with the following fields:
 
 | Field | Comment |
 |-------|---------|
@@ -131,26 +131,26 @@ HCSIM requires 3 input data:
 | `REF_ALLELE` | Allele of the reference genome in `POS` |
 | `ALT_ALLELE` | Alternate allele of the germline SNP in `POS` |
 
-An example of this list is given [here](examples/dbsnp.tsv). If this file is not provided, HCSIM will randomly introduce SNPs into the reference genome based on the snp-ratio parameter.
+An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/dbsnp.tsv). If this file is not provided, HCSIM will randomly introduce SNPs into the reference genome based on the snp-ratio parameter.
 
-3. **A list of contig to exclude (optional).**. This list is optional but highly reccomended. This is a list containing all the contigs in the given reference genome that should be excluded. An example of this list is given [here](examples/ignore.txt). HCSIM requires the list to be given in a file with every excluded contig in a new line.
+3. **A list of contig to exclude (optional).**. This list is optional but highly reccomended. This is a list containing all the contigs in the given reference genome that should be excluded. An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/ignore.txt). HCSIM requires the list to be given in a file with every excluded contig in a new line.
 
 <a name="commands"></a>
 ### HCSIM Commands
 
 HCSIM offers different sub commands to run either the entire pipeline with all the steps or only some specific steps. In particular, the latter commands are useful when user wants to re-run some specific steps by varying some of the default parameters.
-Every command can be run directly when HCSIM has been correctly installed.
+Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcsim sim`.
 
-| Command | Description | Required input | Output |
-|---------|-------------|----------------|--------|
-| [`hcsim sim`](man/hcsim-sim.md) | Running the complete HCSIM pipeline | The first required input data | [Final outputs](doc/chisel.md) |
-| [`hcsim gprofile`](man/hcsim-gprofile.md) | Generating CNA profile | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [`hcsim gfasta`](man/hcsim-gfasta.md) | Generating clone FASTA file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [`hcsim gfastq`](man/hcsim-gfastq.md) | Generating clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [`hcsim align`](man/hcsim-align.md) | Aligning clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [`hcsim downsam`](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [`hcsim pbam`](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-calling.md) |
-| [`hcsim bcbam`](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-cloning.md) |
+| SubCommand | Description | Required input | Output |
+|--------------|-------------|----------------|--------|
+| [sim](man/hcsim-sim.md) | Running the complete HCSIM pipeline | The first required input data | [Final outputs](doc/chisel.md) |
+| [gprofile](man/hcsim-gprofile.md) | Generating CNA profile | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
+| [gfasta](man/hcsim-gfasta.md) | Generating clone FASTA file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
+| [gfastq](man/hcsim-gfastq.md) | Generating clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
+| [align](man/hcsim-align.md) | Aligning clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
+| [downsam](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
+| [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-calling.md) |
+| [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-cloning.md) |
 
 
 Click on the name of each command to obtain a description of all the available parameters.

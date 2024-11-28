@@ -1,3 +1,5 @@
+# hcsim sim
+
 `hcsim sim` command to run the complete pipeline starting from the required reference genome.
 
 ```shell

@@ -1,3 +1,5 @@
+# hcsim gfasta
+
 `hcsim gfasta` command to generate fasta file for each clone based on previous CNA profile.
 
 ```shell
