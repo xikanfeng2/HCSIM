@@ -8,8 +8,8 @@ project = "HCSIM"
 author = "Xikang Feng"
 repository_url = "https://github.com/xikanfeng2/HCSIM"
 copyright = f"{datetime.now():%Y}, Xikang Feng."
-version = "1.0.5"
-release = "1.0.5"
+version = "1.0.0"
+release = "1.0.0"
 
 def linkcode_resolve(domain, info):
     if domain != 'py':
