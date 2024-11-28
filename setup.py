@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="HCSIM",
-    version="1.0.0",
+    version="1.0.1",
     author="Xikang Feng",
     author_email="fxk@nwpu.edu.cn",
     maintainer="Sisi Peng",
@@ -35,8 +35,8 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
     install_requires=[
-        'pandas>=0.23.4',
-        'numpy>=2.1.0',
+        'pandas',
+        'numpy>=1.16.1',
         'matplotlib>=3.0.2',
         'networkx>=3.2.1',
     ],
