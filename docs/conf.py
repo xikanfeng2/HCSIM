@@ -11,6 +11,14 @@ copyright = f"{datetime.now():%Y}, Xikang Feng."
 version = "1.0.5"
 release = "1.0.5"
 
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    filename = info['module'].replace('.', '/')
+    return "https://somesite/sourcerepo/%s.py" % filename
+
 # -- General configuration
 extensions = [
     # read Markdown files
