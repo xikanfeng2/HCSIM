@@ -1,18 +1,18 @@
-[![Stars](https://img.shields.io/github/stars/xikanfeng2/scsilicon2?logo=GitHub&color=yellow)](https://github.com/xikanfeng2/scsilicon2/stargazers)
-[![PyPI](https://img.shields.io/pypi/v/scsilicon2?logo=PyPI)](https://pypi.org/project/SCSilicon2/)
-[![Downloads](https://static.pepy.tech/badge/scsilicon2)](https://pepy.tech/project/scsilicon2)
-[![Docs](https://readthedocs.org/projects/scsilicon2/badge/)](https://scsilicon2.readthedocs.io)
+[![Stars](https://img.shields.io/github/stars/xikanfeng2/hcsim?logo=GitHub&color=yellow)](https://github.com/xikanfeng2/hcsim/stargazers)
+[![PyPI](https://img.shields.io/pypi/v/hcsim?logo=PyPI)](https://pypi.org/project/SCSilicon2/)
+[![Downloads](https://static.pepy.tech/badge/hcsim)](https://pepy.tech/project/hcsim)
+[![Docs](https://readthedocs.org/projects/hcsim/badge/)](https://hcsim.readthedocs.io)
 
-# SCSilicon2 - Single-Cell Genomics Simulator in Python
+# HCSIM: A Single-Cell Genomics Simulator with Haplotype-Specific Copy Number Annotation.
 
-SCSilicon2 is a single-cell genomics simulator which cost-effectively simulates single-cell genomics reads with haplotype-specific copy number annotation. Read the full [documentation] here.
-
-
-## Citation
-
-If you use `scsilicon2` in your work, please cite the `scsilicon2` publication as follows:
-
-> to do
+HCSIM: A Single-Cell Genomics Simulator with Haplotype-Specific Copy Number Annotation. Read the full [documentation] here.
 
 
-[documentation]: https://scsilicon2.readthedocs.io
+<!-- ## Citation
+
+If you use `hcsim` in your work, please cite the `hcsim` publication as follows:
+
+> to do -->
+
+
+[documentation]: https://hcsim.readthedocs.io

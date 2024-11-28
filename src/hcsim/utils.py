@@ -1,16 +1,9 @@
 import os
 import sys
-import time
-import re
 import random
 import datetime
 import subprocess as sp
-import multiprocessing
-from multiprocessing import Value, Lock, Pool
 import numbers
-import numpy as np
-import scipy.sparse as sps
-
 
 # check part
 def check_exist(**params):
@@ -221,37 +214,8 @@ def random_sampling(m, n, k):
         new_sampled_lines_2d.append(temp)
     return new_sampled_lines_2d
 
-def get_all_clones(files):
-    clones = []
-    for file in files:
-        clone = ntpath.basename(file).split('_')[0]
-        if clone not in clones:
-            clones.append(clone)
-
-    return clones
-
 def root_path():
     return os.path.dirname(os.path.abspath(__file__))
-
-def vcf_to_mtx(input_file, output_mtx):
-    # 读取VCF文件中的信息
-    data = np.loadtxt(input_file, dtype=str, delimiter='\t')
-
-    # 提取行数、列数和非零元素数
-    rows = np.unique(data[:, 0])
-    cols = np.unique(data[:, 1])
-    nonzeros = len(data)
-
-    # 构建稀疏矩阵
-    mtx = sps.dok_matrix((len(rows), len(cols)), dtype=int)
-    for entry in data:
-        row = np.where(rows == entry[0])[0][0]
-        col = np.where(cols == entry[1])[0][0]
-        mtx[row, col] = int(entry[2])
-
-    # 保存为Matrix Market格式的稀疏矩阵
-    sps.save_npz(output_mtx, mtx.tocsr())
-
 
 class bcolors:
     HEADER = '\033[95m'  # 用于高亮显示标题或头部信息的颜色代码，通常为浅紫色。

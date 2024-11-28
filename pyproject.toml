@@ -1,21 +1,40 @@
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
 [project]
-name = "SCSilicon2"
-version = "1.0.1"
-authors = [
-  { name="Xikang Feng", email="fxk@nwpu.edu.cn" },
+name = "HCSIM"
+version = "1.0.5"
+dependencies = [
+  "pandas>=0.23.4",
+  "numpy>=2.1.0",
+  "matplotlib>=3.0.2",
+  "networkx>=3.2.1",
 ]
-description = "SCSilicon2: a single-cell genomics simulator which cost-effectively simulates single-cell genomics reads with haplotype-specific copy number annotation."
-readme = "README.md"
 requires-python = ">=3.6"
+authors = [
+  { name = "Xikang Feng", email = "fxk@nwpu.edu.cn" },
+  { name = "Sisi Peng", email = "sisipeng@mail.nwpu.edu.cn" },
+]
+maintainers = [
+  {name = "Xikang Feng", email = "fxk@nwpu.edu.cn"}
+]
+description = "HCSIM: A Single-Cell Genomics Simulator with Haplotype-Specific Copy Number Annotation."
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["cancer", "single-cell", "DNA", "copy-number", "haplotype-specific", "simulator",]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
 [project.urls]
-Homepage = "https://github.com/xikanfeng2/SCSilicon2"
-Issues = "https://github.com/xikanfeng2/SCSilicon2/issues"
+Homepage = "https://github.com/xikanfeng2/HCSIM"
+Documentation = "https://hcsim.readthedocs.org"
+Repository = "https://github.com/xikanfeng2/HCSIM"
+"Bug Tracker" = "https://github.com/me/spam/issues"
+
+[project.scripts]
+hcsim = "hcsim.bin.hcsim_main:main"

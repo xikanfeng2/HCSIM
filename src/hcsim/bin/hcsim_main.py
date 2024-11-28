@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-import numpy as np
-import pandas as pd
 import argparse
 from hcsim import HCSIM
 import inspect
@@ -45,7 +41,7 @@ def alignment(args):
 
 def downsampling(args):
     hcsim = create_hcsim_from_args(args)
-    hcsim.downsample()
+    hcsim.downsam()
 
 def process_cell_bam(args):
     hcsim = create_hcsim_from_args(args)
@@ -73,20 +69,21 @@ def add_executable_arguments(parser):
 
 def add_gprofile_arguments(parser):
     # CNA Profile
-    parser.add_argument('-d', '--max-cnv-tree-depth', type=int, required=False, default=4, metavar="", help='The maximum depth of random evolution tree (default: 4)')
-    parser.add_argument('-cp', '--cnv-prob-cutoff', type=float, required=False, default=0.8, metavar="", help='The cutoff probability of a bin undergoing CNA, if random probability is larger than cutoff, CNA happens (default: 0.8)')
+    parser.add_argument('-d', '--max-tree-depth', type=int, required=False, default=4, metavar="", help='The maximum depth of random evolution tree (default: 4)')
+    parser.add_argument('-cp', '--cna-prob-cutoff', type=float, required=False, default=0.8, metavar="", help='The cutoff probability of a bin undergoing CNA, if random probability is larger than cutoff, CNA happens (default: 0.8)')
     parser.add_argument('-wgd', '--wgd-cna-no', type=int, required=False, default=0, metavar="", help='Number of clonal whole-genome duplications (WGDs) to introduce in the ancestor of tumor evolution (default: 0)')
     parser.add_argument('-wcl', '--wcl-cna-no', type=int, required=False, default=0, metavar="", help='Number of clonal whole-chromosome losses (WCLs) to introduce in the ancestor of tumor evolution (default: 0)')
     parser.add_argument('-loh', '--loh-cna-no', type=int, required=False, default=30, metavar="", help='Number of loss of heterozygosity (LOH) CNAs to introduce in the each clone of tumor evolution, including CNL_LOH, CNN_LOH, CNG_LOH (default: 30)')
     parser.add_argument('-goh', '--goh-cna-no', type=int, required=False, default=10, metavar="", help='Number of gain of heterozygosity (GOH) CNAs to introduce in the each clone of tumor evolution (default: 10)')
     parser.add_argument('-m', '--mirror-cna-no', type=int, required=False, default=10, metavar="", help='Number of mirror CNAs to introduce in the each clone of tumor evolution (default: 10)')
-
-def add_gfasta_arguments(parser):
-    # Clone FASTA
     parser.add_argument('-l', '--snp-list', type=str, required=False, default=None, metavar="", help='Path to the known germline SNPs file containing a SNP positions to add in the simulate human genome in the\nformat "#CHR POSITION REF_ALLELES ALT_ALLELES" with first line as headline (default: none, SNPs are placed randomly)')
     parser.add_argument('-p', '--snp-ratio', type=float, required=False, default=0.001, metavar="", help='Ratio of SNPs to place randomly when a snp file is not given (snp-ratio is requried only whether snp-list is not provided. default: 0.001).')
     parser.add_argument('-hr', '--heho-ratio', type=float, required=False, default=0.67, metavar="", help='Ratio of heterozygous SNPs compared to homozygous ones (default: 0.67)')
 
+def add_gfasta_arguments(parser):
+    # Clone FASTA
+    pass
+    
 def add_gfastq_arguments(parser):
     # Clone FASTQ
     parser.add_argument('-c', '--clone-coverage', type=float, required=False, default=30, metavar="", help='The reads coverage for clone (default: 30)')
@@ -162,7 +159,7 @@ def main():
     align_parser.set_defaults(func=alignment)
 
     # downsample subcommand
-    downsample_parser = subparsers.add_parser("downsample", help="Downsampling clone BAM.")
+    downsample_parser = subparsers.add_parser("downsam", help="Downsampling clone BAM.")
     add_shared_arguments(downsample_parser)
     add_downsample_arguments(downsample_parser)
     downsample_parser.add_argument('--samtools', type=str, required=False, default='samtools', metavar="", help='Path to the executable \"samtools\" file (default: in $PATH)')
@@ -178,7 +175,7 @@ def main():
 
     # bcbam subcommand
     bcbam_parser = subparsers.add_parser("bcbam", help="Generating barcode BAM file.")
-    add_shared_arguments(pbam_parser)
+    add_shared_arguments(bcbam_parser)
     bcbam_parser.add_argument('-bcl', '--barcode-len', type=int, required=False, default=12, metavar="", help='Length of barcodes (default: 12)')
     bcbam_parser.add_argument('--bwa', type=str, required=False, default='bwa', metavar="", help='Path to the executable \"bwa\" file (default: in $PATH)')
     bcbam_parser.add_argument('--samtools', type=str, required=False, default='samtools', metavar="", help='Path to the executable \"samtools\" file (default: in $PATH)')

@@ -1,6 +1,3 @@
-# coding=utf-8
-# -*- coding: utf-8 -*-
-
 import os, sys
 os.environ["OMP_NUM_THREADS"] = "1" 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -22,7 +19,7 @@ from heapq import nlargest
 
 import numpy as np
 
-from Utils_new import *
+from .chisel_utils import *
 
 
 def parse_args():

@@ -1,22 +1,17 @@
-import os
-import sys
 import copy
-import random
-import pandas as pd
-import numpy as np
-import subprocess
 import datetime
 import multiprocessing as mp
-import logging
-from . import utils
-from . import random_tree
+import os
+import random
+import sys
 from collections import deque
-from glob import glob
-from multiprocessing.pool import ThreadPool as Pool
-from pathlib import Path
-from scipy.sparse import coo_matrix
-from scipy.io import mmwrite
+
+import pandas as pd
+
+from . import random_tree
+from . import utils
 from .utils import ProgressBar, bcolors
+
 
 pd.options.mode.chained_assignment = None
 
@@ -28,12 +23,12 @@ class HCSIM:
                 outdir: str = './', 
                 clone_no: int = 2, 
                 cell_no: int = 2, 
-                max_cnv_tree_depth: int = 4, 
+                max_tree_depth: int = 4, 
                 bin_size: str = '5Mb', 
                 snp_ratio: float = 0.001, 
                 thread: int = None, 
                 heho_ratio: float = 0.67, 
-                cnv_prob_cutoff: float = 0.8, 
+                cna_prob_cutoff: float = 0.8, 
                 clone_coverage: float = 30, 
                 cell_coverage: float = 0.5, 
                 reads_len: int = 150, 
@@ -210,13 +205,13 @@ class HCSIM:
         if self.cell_no < self.clone_no:
             raise ValueError(
                 "The number of cells should not be less than the number of clones.")
-        utils.check_int(max_cnv_tree_depth=self.max_cnv_tree_depth)
-        utils.check_positive(max_cnv_tree_depth=self.max_cnv_tree_depth)
+        utils.check_int(max_tree_depth=self.max_tree_depth)
+        utils.check_positive(max_tree_depth=self.max_tree_depth)
         utils.check_int(bin_size=self.bin_size)
         utils.check_positive(bin_size=self.bin_size)
         utils.check_between(0,1,heho_ratio=self.snp_ratio)
         utils.check_between(0,1,heho_ratio=self.heho_ratio)
-        utils.check_between(0,1,cnv_prob_cutoff=self.cnv_prob_cutoff)
+        utils.check_between(0,1,cna_prob_cutoff=self.cna_prob_cutoff)
         utils.check_positive(clone_coverage=self.clone_coverage)
         utils.check_positive(cell_coverage=self.cell_coverage)
         utils.check_int(reads_len=self.reads_len)
@@ -263,7 +258,7 @@ class HCSIM:
         cell_no: int, optional, default: 2
             The total cell number for this simultion dataset
         
-        max_cnv_tree_depth: int, optional, default: 4
+        max_tree_depth: int, optional, default: 4
             The maximum depth of random evolution tree
         
         bin_size: int, optional, default: 500000
@@ -275,7 +270,7 @@ class HCSIM:
         wgd_cna_no: int, optional, default: 0
 
         
-        cnv_prob_cutoff: float, optional, default: 0.8
+        cna_prob_cutoff: float, optional, default: 0.8
             The cutoff probability of a bin undergoing CNV, if random probability is larger than cutoff, CNV happens
         
         clone_coverage: float, optional, default: 30
@@ -317,9 +312,9 @@ class HCSIM:
         if 'cell_no' in params and params['cell_no'] != self.cell_no:
             self.cell_no = params['cell_no']
             del params['cell_no']
-        if 'max_cnv_tree_depth' in params and params['max_cnv_tree_depth'] != self.max_cnv_tree_depth:
-            self.max_cnv_tree_depth = params['max_cnv_tree_depth']
-            del params['max_cnv_tree_depth']
+        if 'max_tree_depth' in params and params['max_tree_depth'] != self.max_tree_depth:
+            self.max_tree_depth = params['max_tree_depth']
+            del params['max_tree_depth']
         if 'bin_size' in params and params['bin_size'] != self.bin_size:
             self.bin_size = params['bin_size']
             del params['bin_size']
@@ -329,9 +324,9 @@ class HCSIM:
         if 'heho_ratio' in params and params['heho_ratio'] != self.heho_ratio:
             self.heho_ratio = params['heho_ratio']
             del params['heho_ratio']
-        if 'cnv_prob_cutoff' in params and params['cnv_prob_cutoff'] != self.cnv_prob_cutoff:
-            self.cnv_prob_cutoff = params['cnv_prob_cutoff']
-            del params['cnv_prob_cutoff']
+        if 'cna_prob_cutoff' in params and params['cna_prob_cutoff'] != self.cna_prob_cutoff:
+            self.cna_prob_cutoff = params['cna_prob_cutoff']
+            del params['cna_prob_cutoff']
         if 'clone_coverage' in params and params['clone_coverage'] != self.clone_coverage:
             self.clone_coverage = params['clone_coverage']
             del params['clone_coverage']
@@ -556,9 +551,9 @@ class HCSIM:
         return ref
 
     def _generate_cnv_profile_for_each_clone(self, root, ref, m_fasta, p_fasta):
-        cutoff = self.cnv_prob_cutoff
+        cutoff = self.cna_prob_cutoff
         changes = []
-        all_chroms = list(np.unique(ref['Chromosome']))
+        all_chroms = ref['Chromosome'].unique().tolist()
         if self.wgd_cna_no + self.wcl_cna_no > len(all_chroms):
             raise Exception("The sum of wgd_cna_no and wcl_cna_no should be less or equal to the total number of chromosomes!")
 
@@ -609,7 +604,7 @@ class HCSIM:
                 wgd_cnvs = dict.fromkeys(wgd_chroms) # store the cnv number for each wgd chrom
                 wcl_cnvs = dict.fromkeys(wcl_chroms) # store the cnv number for each wgd chrom
 
-                # select the position for CNL_LOH, CNN_LOH, GOH and Mirrored_CNV
+                # select the position for CNL_LOH, CNN_LOH, GOH and Mirror CNA
                 cnl_loh_no = int(self.loh_cna_no/3)
                 random_bins = random.sample(range(0, ref.shape[0]), self.loh_cna_no + self.goh_cna_no + self.mirror_cna_no)
                 cnl_loh_bins = random_bins[:cnl_loh_no]
@@ -618,7 +613,7 @@ class HCSIM:
                 mirrored_cnv_bins = random_bins[self.loh_cna_no + self.goh_cna_no:]
                 
                 for i in range(ref.shape[0]):
-                    # if flag is ture, the previous bin has been process as Mirrored_CNV bin and skip it.
+                    # if flag is ture, the previous bin has been process as Mirror CNA bin and skip it.
                     if mirrored_cnv_flag:
                         mirrored_cnv_flag = False
                         continue
@@ -774,7 +769,7 @@ class HCSIM:
                             clone.changes.append('NONE')
                             continue
                     
-                    # handle Mirrored_CNV
+                    # handle Mirror CNA
                     if i in mirrored_cnv_bins:
                         # make sure the next bin located in same chromosome
                         if i+1 >= ref.shape[0] or ref['Chromosome'][i] != ref['Chromosome'][i+1]:
@@ -783,33 +778,33 @@ class HCSIM:
                             clone.changes.append('NONE')
                             continue
 
-                        # generate Mirrored_CNV number
+                        # generate Mirror CNA number
                         total_cnv = utils.random_mirrored_cnv()
                         cnv1 = random.randint(0,total_cnv)
                         while cnv1 == total_cnv/2:
                             cnv1 = random.randint(0, total_cnv)
                         cnv2 = total_cnv - cnv1
                         if random.random() < 0.5: # m:p = cnv1:cnv2
-                            changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
-                            changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
-                            changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
-                            changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
+                            changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
+                            changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
+                            changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
+                            changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
                             clone.maternal_cnvs.append(cnv1)
                             clone.paternal_cnvs.append(cnv2)
                             clone.maternal_cnvs.append(cnv2)
                             clone.paternal_cnvs.append(cnv1)
                         else: # m:p = cnv2:cnv1
-                            changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
-                            changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
-                            changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
-                            changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
+                            changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
+                            changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
+                            changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
+                            changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
                             clone.maternal_cnvs.append(cnv2)
                             clone.paternal_cnvs.append(cnv1)
                             clone.maternal_cnvs.append(cnv1)
                             clone.paternal_cnvs.append(cnv2)
                         mirrored_cnv_flag = True
-                        clone.changes.append('Mirrored_CNV')
-                        clone.changes.append('Mirrored_CNV')
+                        clone.changes.append('Mirror CNA')
+                        clone.changes.append('Mirror CNA')
                         continue
                     
                     # generate random cnv
@@ -843,14 +838,14 @@ class HCSIM:
                                     clone.changes.pop()
                                     changes.pop()
                                     changes.pop()
-                                changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),'1->'+str(clone.maternal_cnvs[-1])])
-                                changes.append(['normal',clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(m_cnv)])
-                                changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),'1->'+str(clone.paternal_cnvs[-1])])
-                                changes.append(['normal',clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(p_cnv)])
+                                changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),'1->'+str(clone.maternal_cnvs[-1])])
+                                changes.append(['normal',clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(m_cnv)])
+                                changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),'1->'+str(clone.paternal_cnvs[-1])])
+                                changes.append(['normal',clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(p_cnv)])
                                 clone.maternal_cnvs.append(m_cnv)
                                 clone.paternal_cnvs.append(p_cnv)
-                                clone.changes.append('Mirrored_CNV')
-                                clone.changes.append('Mirrored_CNV')
+                                clone.changes.append('Mirror CNA')
+                                clone.changes.append('Mirror CNA')
                                 continue
                         
                         # normal case
@@ -878,7 +873,7 @@ class HCSIM:
                 clone.paternal_cnvs = copy.deepcopy(clone.parent.paternal_cnvs)
                 clone.changes = copy.deepcopy(clone.parent.changes)
 
-                 # select the position for CNL_LOH, CNN_LOH, GOH and Mirrored_CNV
+                 # select the position for CNL_LOH, CNN_LOH, GOH and Mirror CNA
                 cnl_loh_no = int(self.loh_cna_no/3)
                 random_bins = random.sample(range(0, ref.shape[0]), self.loh_cna_no + self.goh_cna_no + self.mirror_cna_no)
                 cnl_loh_bins = random_bins[:cnl_loh_no]
@@ -888,7 +883,7 @@ class HCSIM:
                 mirrored_cnv_flag = False
 
                 for i, item in enumerate(clone.paternal_cnvs):
-                    # if flag is ture, the previous bin has been process as Mirrored_CNV bin and skip it.
+                    # if flag is ture, the previous bin has been process as Mirror CNA bin and skip it.
                     if mirrored_cnv_flag:
                         mirrored_cnv_flag = False
                         continue
@@ -977,39 +972,39 @@ class HCSIM:
                             else:
                                 continue
                     
-                        # handle Mirrored_CNV
+                        # handle Mirror CNA
                         if i in mirrored_cnv_bins:
                             # make sure the next bin located in same chromosome
                             if i+1 >= len(clone.paternal_cnvs) or ref['Chromosome'][i] != ref['Chromosome'][i+1] or clone.parent.changes[i+1] != 'NONE':
                                 continue
 
-                            # generate Mirrored_CNV number
+                            # generate Mirror CNA number
                             total_cnv = utils.random_mirrored_cnv()
                             cnv1 = random.randint(0,total_cnv)
                             while cnv1 == total_cnv/2:
                                 cnv1 = random.randint(0, total_cnv)
                             cnv2 = total_cnv - cnv1
                             if random.random() < 0.5: # m:p = cnv1:cnv2
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
                                 clone.maternal_cnvs[i] = cnv1
                                 clone.paternal_cnvs[i] = cnv2
                                 clone.maternal_cnvs[i+1] = cnv2
                                 clone.paternal_cnvs[i+1] = cnv1
                             else: # m:p = cnv2:cnv1
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv2)])
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv1)])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),'1->'+str(cnv1)])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i+1]+':'+str(ref['Start'][i+1])+'-'+str(ref['End'][i+1]),'1->'+str(cnv2)])
                                 clone.maternal_cnvs[i] = cnv2
                                 clone.paternal_cnvs[i] = cnv1
                                 clone.maternal_cnvs[i+1] = cnv1
                                 clone.paternal_cnvs[i+1] = cnv2
                             mirrored_cnv_flag = True
-                            clone.changes[i] = 'Mirrored_CNV'
-                            clone.changes[i+1] = 'Mirrored_CNV'
+                            clone.changes[i] = 'Mirror CNA'
+                            clone.changes[i+1] = 'Mirror CNA'
                             continue
                     
                     # regular situation
@@ -1053,12 +1048,12 @@ class HCSIM:
                                 if clone.changes[i-1] == 'REGULAR':
                                     changes.pop()
                                     changes.pop()
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),str(clone.parent.maternal_cnvs[i-1])+'->'+str(clone.maternal_cnvs[i-1])])
-                                changes.append([clone.parent.name,clone.name,'maternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),str(m_parent_cnv)+'->'+str(m_cnv)])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),str(clone.parent.paternal_cnvs[i-1])+'->'+str(clone.paternal_cnvs[i-1])])
-                                changes.append([clone.parent.name,clone.name,'paternal','Mirrored_CNV',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),str(p_parent_cnv)+'->'+str(p_cnv)])
-                                clone.changes[i-1] = 'Mirrored_CNV'
-                                clone.changes[i] = 'Mirrored_CNV'
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),str(clone.parent.maternal_cnvs[i-1])+'->'+str(clone.maternal_cnvs[i-1])])
+                                changes.append([clone.parent.name,clone.name,'maternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),str(m_parent_cnv)+'->'+str(m_cnv)])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i-1]+':'+str(ref['Start'][i-1])+'-'+str(ref['End'][i-1]),str(clone.parent.paternal_cnvs[i-1])+'->'+str(clone.paternal_cnvs[i-1])])
+                                changes.append([clone.parent.name,clone.name,'paternal','Mirror CNA',ref['Chromosome'][i]+':'+str(ref['Start'][i])+'-'+str(ref['End'][i]),str(p_parent_cnv)+'->'+str(p_cnv)])
+                                clone.changes[i-1] = 'Mirror CNA'
+                                clone.changes[i] = 'Mirror CNA'
                                 continue
 
                         if m_cnv != m_parent_cnv:
@@ -1080,41 +1075,13 @@ class HCSIM:
             ref[clone.name+'_paternal_cnvs'] = clone.paternal_cnvs
             queue.extend(clone.children)
 
-        # ref.to_csv('original_cnv.csv')
-
-        # # merge segments
-        # merged_rows = []
-
-        # # Iterate through the DataFrame and merge rows
-        # current_row = None
-
-        # for index, row in ref.iterrows():
-        #     if current_row is None:
-        #         current_row = row.copy()
-        #     else:
-        #         if list(current_row.iloc[3:]) == list(row.iloc[3:]):
-        #             current_row['End'] = max(current_row['End'], row['End'])
-        #         else:
-        #             merged_rows.append(current_row)
-        #             current_row = row.copy()
-
-        # # Add the last row to the merged rows
-        # if current_row is not None:
-        #     merged_rows.append(current_row)
-
-        # # Create a new DataFrame with merged rows
-        # # merged_ref = pd.DataFrame(merged_rows).reset_index(drop=True)
-        # merged_ref = pd.DataFrame(merged_rows)
-
         return ref, changes, maternal_genome, paternal_genome
 
     def _generate_fasta_for_each_clone(self, job):
         (clone, ref, changes, maternal_genome, paternal_genome, outdir) = job
-        # queue = deque(root.children)
+
         bar.progress(advance=False, msg="Start generating fasta file for {}".format(clone.name))
 
-        # while queue:
-        #     clone = queue.popleft()
         clone.maternal_fasta = os.path.join(outdir, clone.name+'_maternal.fasta')
         clone.paternal_fasta = os.path.join(outdir, clone.name+'_paternal.fasta')
         
@@ -1176,8 +1143,7 @@ class HCSIM:
                         clone.paternal_fasta_length += len(cnv_p_sequence)
                     m_output.write('\n')
                     p_output.write('\n')
-            # queue.extend(clone.children)
-        
+
         # merge maternal and paternal fasta
         # clone.fasta = os.path.join(outdir, clone.name+'.fasta')
         # command = """sed '/^>chr/ s/$/-A/' {0} > {1} && sed '/^>chr/ s/$/-B/' {2} >> {1}""".format(clone.maternal_fasta, clone.fasta, clone.paternal_fasta)
@@ -1250,44 +1216,6 @@ class HCSIM:
 
         self._wgsim_process(pe_reads,clone.paternal_fasta,fq1,fq2)
         bar.progress(advance=True, msg="Finish generating fastq file for {}".format(clone.name))
-
-    # def _downsampling_fastq(self, root, outdir):
-    #     queue = deque([root])
-    #     assigns = utils.assign_cells_to_clones(self.cell_no, self.clone_no)
-    #     while queue:
-    #         clone = queue.pop()
-    #         clone_dir = os.path.join(outdir, clone.name)
-    #         if not os.path.exists(clone_dir):
-    #             os.makedirs(clone_dir)
-    #         clone.cell_no = assigns.pop()
-    #         clone.ratio = round(clone.cell_no/self.cell_no, 2)
-    #         total_reads_no = int(int(subprocess.check_output(['wc', '-l', clone.fq1]).split()[0])/4)
-    #         per_cell_reads_no = int(total_reads_no*self.cell_coverage/self.clone_coverage)
-    #         sampling_results = utils.random_sampling(total_reads_no, clone.cell_no, per_cell_reads_no)
-
-    #         for i in range(0, clone.cell_no):
-    #             lines = sampling_results[i]
-
-    #             # generate index file
-    #             index_file = os.path.join(clone_dir, clone.name + '_cell'+str(i)+'.index')
-    #             with open(index_file, 'w') as output:
-    #                 for line in lines:
-    #                     output.write(str(line)+'\n')
-    #             if self.mode ==0: # normal mode
-    #                 cell_fq1 = os.path.join(clone_dir, clone.name + '_cell'+str(i)+'_r1.fq')
-    #                 cell_fq2 = os.path.join(clone_dir, clone.name + '_cell'+str(i)+'_r2.fq')
-    #                 command = "awk 'NR == FNR{ ind[$1]; next }(FNR in ind)' "+index_file+" "+clone.fq1+" > " + cell_fq1
-    #                 code = os.system(command)
-    #                 command = "awk 'NR == FNR{ ind[$1]; next }(FNR in ind)' "+index_file+" "+clone.fq2+" > " + cell_fq2
-    #                 code = os.system(command)
-
-    #                 # delete index file
-    #                 os.remove(index_file)
-    #             else: # 10X barcode mode
-    #                 pass   
-    #         os.remove(clone.fq1)
-    #         os.remove(clone.fq2)                
-    #         queue.extend(clone.children)
 
     def _alignment_for_each_clone(self, job):
         (clone, fastq_dir, bam_dir, log_dir) = job
@@ -1438,414 +1366,6 @@ class HCSIM:
         # rename cell bam
         os.rename(rg_dedup_bam_file, bam_file)
         bar.progress(advance=True, msg="Finish cell bam processing for {}".format(cell))
-
-    def call_snp_for_cell(self):
-        bam_dir = os.path.join(self.outdir, 'bam')
-        vcf_dir = os.path.join(self.outdir, 'vcf')
-        barcodes = []
-        
-        if not os.path.exists(vcf_dir):
-            os.makedirs(vcf_dir)
-
-        # read barcodes file
-        profile_dir = os.path.join(self.outdir, 'profile')
-        barcodes_file = os.path.join(profile_dir, 'barcodes.txt')
-        with open(barcodes_file, 'r') as output:
-            for line in output.readlines():
-                barcodes.append(line.strip())
-        for barcode in barcodes:
-            clone = barcode.split('_')[0]
-            bam_file = os.path.join(bam_dir, clone, barcode+".bam")
-            clone_vcf_dir = os.path.join(vcf_dir, clone)
-            if not os.path.exists(clone_vcf_dir):
-                os.makedirs(clone_vcf_dir)
-            cell_vcf_file = os.path.join(clone_vcf_dir, barcode+".vcf.gz")
-            cell_snp_vcf_file = os.path.join(clone_vcf_dir, barcode+".snp.vcf.gz")
-
-            #run bcftools call snp
-            logging.info('bcftools call snp for {0}...'.format(barcode))
-            command = """{0} mpileup --ignore-RG -f {1} {2} | {0} call -mv -Oz -o {3}""".format(self.bcftools_path, self.ref_genome, bam_file, cell_vcf_file)
-            code = os.system(command)
-
-            logging.info('tabix index vcf.gz for {0}...'.format(barcode))
-            command = """{0} {1}""".format(self.tabix_path, cell_vcf_file)
-            code = os.system(command)
-
-            # logging.info('gatk select snp for {0}...'.format(barcode))
-            # command = """{0} SelectVariants -select-type SNP -R {1} -V {2} -O {3}""".format(self.gatk_path, self.ref_genome, cell_vcf_file, cell_snp_vcf_file)
-            # print(command)
-            # code = os.system(command)
-            #bcftools view --types snps -m 2 -M 2 vcf
-            
-    def conslidate_cell_vcfs(self):
-        vcf_dir = os.path.join(self.outdir, 'vcf')
-        tmp_dir = os.path.join(self.outdir, 'tmp')
-        merged_vcf_file =  os.path.join(vcf_dir, 'merged.vcf')
-        ref_txt = os.path.join(vcf_dir, 'reference_alleles.txt')
-        alt_txt = os.path.join(vcf_dir, 'alternative_alleles.txt')
-        ref_mtx = os.path.join(vcf_dir, 'reference_alleles.mtx')
-        alt_mtx = os.path.join(vcf_dir, 'alternative_alleles.mtx')
-        # genomicsdb_work_path = os.path.join(vcf_dir, 'genomicsdb')
-        vcf_files = []
-
-        # read barcodes file
-        profile_dir = os.path.join(self.outdir, 'profile')
-        barcodes_file = os.path.join(profile_dir, 'barcodes.txt')
-        with open(barcodes_file, 'r') as output:
-            for line in output.readlines():
-                barcode = line.strip()
-                clone = barcode.split('_')[0]
-                clone_vcf_dir = os.path.join(vcf_dir, clone)
-                cell_snp_vcf_file = os.path.join(clone_vcf_dir, barcode+".snp.vcf.gz")
-                vcf_files.append(cell_snp_vcf_file)
-        
-        logging.info('merge vcf files...')
-        command = "{0} merge {1} -o {2}".format(self.bcftools_path, ' '.join(vcf_files), merged_vcf_file)
-        code = os.system(command)
-
-        logging.info('extract reference and alternative_alleles...')
-        command = "{0} query -f '%CHROM\t%POS\t%REF[\t%GT]\n' {1} > {2}".format(self.bcftools_path, merged_vcf_file, ref_txt)
-        code = os.system(command)
-
-        command = "{0} query -f '%CHROM\t%POS\t%ALT[\t%GT]\n' {1} > {2}".format(self.bcftools_path, merged_vcf_file, alt_txt)
-        code = os.system(command)
-
-        utils.vcf_to_mtx(ref_txt, ref_mtx)
-        utils.vcf_to_mtx(alt_txt, alt_mtx)
-        # # conslidate vcf files
-        # logging.info('conslidate vcf files...')
-        # for i in range(1, 23):
-        #     chrom = 'chr' + str(i)
-        #     chr_genomicsdb_work_path = os.path.join(genomicsdb_work_path, chrom)
-        #     chr_genotype_vcf_file = os.path.join(vcf_dir, 'genotype.{0}.vcf.gz'.format(chrom))
-
-        #     command = """{0} --java-options "-Xmx4g"\
-        #                 GenomicsDBImport \
-        #                 --genomicsdb-workspace-path {1} \
-        #                 -L {2} \
-        #                 --sample-name-map {3} \
-        #                 --reader-threads 20""".format(self.gatk_path, chr_genomicsdb_work_path, chrom, vcf_sample_map_file)
-        #     code = os.system(command)
-
-        #     # genotype
-        #     logging.info('genotyping vcf files...')
-        #     command = """{0} --java-options "-Xmx4g"\
-        #                 GenotypeGVCFs \
-        #                 -R {1} \
-        #                 -V gendb://{2} \
-        #                 -O {3}""".format(self.gatk_path, self.ref_genome, chr_genomicsdb_work_path, chr_genotype_vcf_file)
-        #     code = os.system(command)
-        #     break
-
-    def get_bam_coverage(self):
-        self._get_chrom_sizes()
-        ref = self._split_chr_to_bins('all')
-
-        bam_dir = os.path.join(self.outdir, 'bam')
-        cov_dir = os.path.join(self.outdir, 'profile')
-        cov_bed_fn = os.path.join(cov_dir, "bedtools_cov.bed")
-        cov_csv_fn = os.path.join(cov_dir, "coverage.tsv")
-
-
-        bam_files = []
-        barcodes = []
-        if not os.path.exists(cov_dir):
-            os.makedirs(cov_dir)
-
-        # write barcodes file
-        profile_dir = os.path.join(self.outdir, 'profile')
-        barcodes_file = os.path.join(profile_dir, 'barcodes.txt')
-        bin_file = os.path.join(profile_dir, 'bin_profile.bed')
-
-        # write bin file
-        with open(bin_file, 'w') as output:
-            for index, row in ref.iterrows():
-                output.write('{}\t{}\t{}\tbin_{}\n'.format(row[0], row[1], row[2], str(index+1)))
-
-        with open(barcodes_file, 'r') as output:
-            for line in output.readlines():
-                barcode = line.strip()
-                barcodes.append(barcode)
-                clone = barcode.split('_')[0]
-                bam_file = os.path.join(self.outdir, 'bam', clone, barcode+'.sorted.dedup.rg.bam')
-                bam_files.append(bam_file)
-
-        # bam_files = [os.path.join(self.outdir, 'bam', 'clone7', 'clone7_cell'+str(i)+'.sorted.bam') for i in range(1, 11)]
-        
-        #run bedtools calculate coverage
-        logging.info('bedtools multicov ...')
-        command = '{0} multicov -bams {1} -bed {2} -q 60 > {3}'.format(self.bedtools_path, ' '.join(bam_files), bin_file, cov_bed_fn)
-        code = os.system(command)
-        
-        cov_data = pd.read_csv(cov_bed_fn, sep='\t', header=None)
-        indexes = cov_data[0] + ':' + cov_data[1].astype(str) + '-' + cov_data[2].astype(str)
-        cov_csv = cov_data.iloc[:,4:]
-        cov_csv.index = indexes
-        cov_csv.columns = barcodes
-        cov_csv.to_csv(cov_csv_fn, sep='\t')
-        # cov_bed_fn = os.path.join(out_dir, "bedtools_cov.bed")
-        # coverage_fn = os.path.join(out_dir, "bedtools_cov.tsv")
-
-        # # mapping quality
-        # cmd = 'bedtools multicov -bams {} -bed {} -q 60 > {}'.format(' '.join(bam_fns), bin_fn, cov_bed_fn)
-        # subprocess.call(cmd, shell=True)
-        # cmd = '(echo "chrom\tstart\tend\t{}"; cat {}) > {}'.format('\t'.join(bam_fns), cov_bed_fn, coverage_fn)
-        # subprocess.call(cmd, shell=True)
-        # cmd = 'rm {}'.format(cov_bed_fn)
-        # subprocess.call(cmd, shell=True)
-
-        # cov_bed_fn = os.path.join(out_dir, "samtools_cov.bed")
-        # coverage_fn = os.path.join(out_dir, "samtools_cov.tsv")
-
-        # # mapping quality
-        # cmd = 'samtools bedcov -Q 60 -j {} {} > {}'.format(bin_fn, bam_fn, cov_bed_fn)
-        # subprocess.call(cmd, shell=True)
-        # cmd = '(echo "chrom\tstart\tend\t{}"; cat {}) > {}'.format('\t'.join(bam_fns), cov_bed_fn, coverage_fn)
-        # subprocess.call(cmd, shell=True)
-        # cmd = 'rm {}'.format(cov_bed_fn)
-        # subprocess.call(cmd, shell=True)
-
-
-
-    def sim_dataset(self):
-        logging.info("Parameter setting...")
-        logging.info(self.get_params())
-        logging.info("Start simulation process...")
-        fasta_dir = os.path.join(self.outdir, 'fasta')
-        fastq_dir = os.path.join(self.outdir, 'fastq')
-        profile_dir = os.path.join(self.outdir, 'profile')
-
-        # create if dir not exist
-        if not os.path.exists(fasta_dir):
-            os.makedirs(fasta_dir)
-        if not os.path.exists(fastq_dir):
-            os.makedirs(fastq_dir)
-        if not os.path.exists(profile_dir):
-            os.makedirs(profile_dir)
-
-        m_fasta = os.path.join(fasta_dir, 'normal_maternal.fasta')
-        p_fasta = os.path.join(fasta_dir, 'normal_paternal.fasta')
-        phase_file = os.path.join(profile_dir, 'phases.tsv')
-        allele_phase_file = os.path.join(profile_dir, 'allele_phases.csv')
-
-        # generate random clone tree and set root as normal clone
-        logging.info('Generating random evolution tree...')
-        root = random_tree.generate_random_tree_balance(self.clone_no, self.max_cnv_tree_depth)
-        # output tree newick
-        tree_newick = os.path.join(profile_dir, 'tree.newick')
-        result = random_tree.tree_to_newick(root)
-        with open(tree_newick, 'w') as output:
-            output.write(result)
-
-        # output tree graph
-        logging.info('Drawing tree graph...')
-        random_tree.draw_tree_to_pdf(root, os.path.join(profile_dir, 'tree.pdf'))
-
-        logging.info('Getting chrommosome sizes...')
-        self._get_chrom_sizes()
-
-        root.maternal_fasta = m_fasta
-        root.paternal_fasta = p_fasta
-        normal_fasta_length = sum(self.chrom_sizes.values())
-        root.maternal_fasta_length = normal_fasta_length
-        root.paternal_fasta_length = normal_fasta_length
-
-        # generate normal fasta with snps 
-        logging.info("Building normal fasta file...")
-        self._buildGenome(m_fasta, p_fasta, phase_file, allele_phase_file)
-
-        # generate cnv for each clone
-        logging.info('Generating CNV profile for each clone...')
-        ref = self._split_chr_to_bins('all')
-        new_ref, changes, maternal_genome, paternal_genome = self._generate_cnv_profile_for_each_clone(root, ref, m_fasta, p_fasta)
-        new_changes = self._out_cnv_profile(root, new_ref, changes, profile_dir)
-
-        # generate fasta file for each clone
-        logging.info('Generating fasta file for each clone...')
-        self._generate_fasta_for_each_clone(root, new_ref, new_changes, maternal_genome, paternal_genome, fasta_dir)
-
-        # add normal to the tree
-        # normal = random_tree.TreeNode('normal')
-        # normal.children.append(root)
-        # root.parent = normal
-        # normal.maternal_fasta = m_fasta
-        # normal.paternal_fasta = p_fasta
-        # normal_fasta_length = sum(chrom_sizes.values())
-        # normal.maternal_fasta_length = normal_fasta_length
-        # normal.paternal_fasta_length = normal_fasta_length
-
-        # merge maternal and paternal to one fasta file
-        logging.info('Merging maternal and paternal fasta file for each clone...')
-        self._merge_fasta_for_each_clone(root, fasta_dir)
-
-        # generate fastq for each clone
-        logging.info('Generating fastq file for each clone...')
-        self._generate_fastq(root, fastq_dir)
-
-        # sampling
-        # logging.info('Generating fastq file for cells of each clone...')
-        # self._downsampling_fastq(root, fastq_dir)
-    
-    def generate_snp_sparse_matrix(self):
-        bam_dir = os.path.join(self.outdir, 'bam')
-        profile_dir = os.path.join(self.outdir, 'profile')
-        temp_bed_fn = os.path.join(profile_dir, "snps.bed")
-        allele_phase_file = os.path.join(profile_dir, "allele_phases.csv")
-
-        bam_files = []
-        barcodes = []
-        if not os.path.exists(profile_dir):
-            os.makedirs(profile_dir)
-
-        # write barcodes file
-        barcodes_file = os.path.join(profile_dir, 'barcodes.txt')
-
-        with open(barcodes_file, 'r') as output:
-            for line in output.readlines():
-                if 'normal' in line:
-                    continue
-                barcode = line.strip()
-                barcodes.append(barcode)
-                clone = barcode.split('_')[0]
-                bam_file = os.path.join(self.outdir, 'bam', clone, barcode+'.sorted.dedup.rg.bam')
-                bam_files.append(bam_file)
-
-        # create bed file
-        snps = pd.read_csv(allele_phase_file, header=None, names=['chrom', 'pos', 'ref', 'alt', 'genotype'])
-        snps_bed = snps[['chrom', 'pos']].copy()
-        snps_bed['start'] = snps_bed['pos'] - 1  # Convert to 0-based positions
-        snps_bed['end'] = snps_bed['pos']
-        snps_bed = snps_bed[['chrom', 'start', 'end']]
-        snps_bed.to_csv(temp_bed_fn, sep='\t', header=False, index=False)
-
-        # Function to count alleles using samtools
-        def count_alleles(bam_file, reference_genome, bed_file):
-            counts = []
-            # Call samtools mpileup
-            result = subprocess.run(
-                ["samtools", "mpileup", "-f", reference_genome, "-l", bed_file, bam_file],
-                capture_output=True, text=True
-            )
-            pileup = result.stdout.strip().split('\n')
-
-            for line in pileup:
-                fields = line.split('\t')
-                chrom, pos, ref = fields[0], int(fields[1]), fields[2]
-                bases = fields[4]
-
-                # Get SNP info from snps DataFrame
-                snp_info = snps[(snps['chrom'] == chrom) & (snps['pos'] == pos)]
-                if not snp_info.empty:
-                    ref_allele = snp_info.iloc[0]['ref']
-                    alt_allele = snp_info.iloc[0]['alt']
-
-                    # Count allelic reads
-                    ref_count = bases.count(ref_allele)
-                    alt_count = bases.count(alt_allele)
-
-                    counts.append((ref_count, alt_count))
-            
-            return counts
-        
-
-        # Initialize dataframes for matrices
-        first_allele_matrix = pd.DataFrame(index=snps.index, columns=[os.path.basename(bam) for bam in bam_files])
-        second_allele_matrix = pd.DataFrame(index=snps.index, columns=[os.path.basename(bam) for bam in bam_files])
-
-        # Process each BAM file
-        for bam in bam_files:
-            sample_name = os.path.basename(bam)
-            print(f"Processing {sample_name}")
-
-            counts = count_alleles(bam, self.ref_genome, temp_bed_fn)
-            
-            for idx, (ref_count, alt_count) in enumerate(counts):
-                first_allele_matrix.at[idx, sample_name] = ref_count
-                second_allele_matrix.at[idx, sample_name] = alt_count
-        matrix1 = first_allele_matrix.fillna(0).values
-        matrix2 = second_allele_matrix.fillna(0).values
-        rows, cols = matrix1.shape
-
-        # 创建稀疏矩阵索引和数据列表
-        row_indices = []
-        col_indices = []
-        data1 = []
-        data2 = []
-
-        # 遍历矩阵，记录非零元素的位置和对应的值
-        for i in range(rows):
-            for j in range(cols):
-                # 记录所有位置的索引
-                row_indices.append(i)
-                col_indices.append(j)
-                # 记录每个矩阵在该位置的值，若为0也记录
-                data1.append(matrix1[i, j])
-                data2.append(matrix2[i, j])
-
-        # 创建稀疏矩阵
-        sparse_matrix1 = coo_matrix((data1, (row_indices, col_indices)), shape=(rows, cols))
-        sparse_matrix2 = coo_matrix((data2, (row_indices, col_indices)), shape=(rows, cols))
-
-        # 打印稀疏矩阵信息
-        # print(f"Sparse Matrix 1: shape = {sparse_matrix1.shape}, non-zero elements = {sparse_matrix1.nnz}")
-        # print(f"Sparse Matrix 2: shape = {sparse_matrix2.shape}, non-zero elements = {sparse_matrix2.nnz}")
-
-        # Save sparse matrices to .mtx files
-        mmwrite(os.path.join(profile_dir, 'ref_matrix.mtx'), sparse_matrix1)
-        mmwrite(os.path.join(profile_dir, 'alt_matrix.mtx'), sparse_matrix2)
-
-        # Optionally, save matrices to CSV
-        first_allele_matrix.to_csv(os.path.join(profile_dir,'ref_matrix.csv'))
-        second_allele_matrix.to_csv(os.path.join(profile_dir,'alt_matrix.csv'))
-    
-    def generate_vcf_file(self):
-        # Input and output file paths
-        profile_dir = os.path.join(self.outdir, 'profile')
-        SNP_FILE = os.path.join(profile_dir, "allele_phases.csv")
-        VCF_FILE = os.path.join(profile_dir, "snps.vcf")
-
-        # Read SNPs from CSV file
-        snps_df = pd.read_csv(SNP_FILE, header=None, names=['CHROM', 'POS', 'REF', 'ALT', 'GENOTYPE'])
-
-        # Create VCF headers
-        # vcf_header = """##fileformat=VCFv4.2
-        # ##source=custom_script
-        # ##INFO=<ID=.,Number=0,Type=Flag,Description="Custom SNPs">
-        # ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-        # #CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tsample1"""
-
-        # Convert DataFrame to VCF format
-        vcf_lines = []
-        for index, row in snps_df.iterrows():
-            vcf_line = f"{row['CHROM']}\t{row['POS']}\t.\t{row['REF']}\t{row['ALT']}\t.\t.\t.\tGT\t{row['GENOTYPE']}"
-            vcf_lines.append(vcf_line)
-
-        # Write to VCF file
-        vcf_output = "\n".join(vcf_lines)
-        with open(VCF_FILE, "w") as f:
-            f.write(vcf_output)
-
-    def split_coverage_matrix(self):
-        profile_dir = os.path.join(self.outdir, 'profile')
-        cov_file = os.path.join(profile_dir, 'coverage.tsv')
-        clone_matix = os.path.join(profile_dir, 'clone_cov.tsv')
-        normal_matix = os.path.join(profile_dir, 'normal_cov.tsv')
-
-        df = pd.read_csv(cov_file, sep='\t', index_col=0)
-
-        # Modify the index format
-        df.index = df.index.str.replace(':', '-')
-
-        # Split into two dataframes
-        clone_columns = [col for col in df.columns if col.startswith('clone')]
-        normal_columns = [col for col in df.columns if col.startswith('normal')]
-
-        df_clone = df[clone_columns]
-        df_normal = df[normal_columns]
-
-        # Save the split dataframes to new files
-        df_clone.to_csv(clone_matix, sep='\t')
-        df_normal.to_csv(normal_matix, sep='\t')
     
     def gprofile(self):
         self.log('Setting directories', level='PROGRESS')
@@ -1862,7 +1382,7 @@ class HCSIM:
 
         # generate random clone tree and set root as normal clone
         self.log('Generating random cell-lineage tree...', level='PROGRESS')
-        root = random_tree.generate_random_tree_balance(self.clone_no, self.max_cnv_tree_depth)
+        root = random_tree.generate_random_tree_balance(self.clone_no, self.max_tree_depth)
 
         self.log('Writing tree to file with newick format...', level='PROGRESS')
         result = random_tree.tree_to_newick(root)
@@ -2030,7 +1550,7 @@ class HCSIM:
         random_tree.save_tree_to_file(root, tree_json)
         self.log('align BYEBYE')
     
-    def downsample(self):
+    def downsam(self):
         self.log('Setting directories', level='PROGRESS')
         dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
 
@@ -2134,6 +1654,6 @@ class HCSIM:
         self.gfasta()
         self.gfastq()
         self.align()
-        self.downsample()
+        self.downsam()
         self.pbam()
         self.bcbam()
