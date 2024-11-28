@@ -13,7 +13,8 @@
 3. [Usage](#usage)
     - [Required data](#requireddata)
     - [Commands](#commands)
-    - [Python Class](#class)
+    - [HCSIM Class](#class)
+    - [Outputs](#outputs)
 
 <a name="overview"></a>
 ## Overview
@@ -113,7 +114,8 @@ HCSIM also requires few standard additional tools, which should be included in `
 
 1. [Required data](#requireddata)
 2. [Commands](#commands)
-3. [Python Class](#class)
+3. [HCSIM Class](#class)
+4. [Outputs](#outputs)
 
 <a name="requireddata"></a>
 ### Required data
@@ -141,19 +143,25 @@ An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob
 HCSIM offers different sub commands to run either the entire pipeline with all the steps or only some specific steps. In particular, the latter commands are useful when user wants to re-run some specific steps by varying some of the default parameters.
 Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcsim sim`.
 
-| SubCommand | Description | Required input | Output |
-|--------------|-------------|----------------|--------|
-| [sim](man/hcsim-sim.md) | Running the complete HCSIM pipeline | The first required input data | [Final outputs](doc/chisel.md) |
-| [gprofile](man/hcsim-gprofile.md) | Generating CNA profile | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [gfasta](man/hcsim-gfasta.md) | Generating clone FASTA file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [gfastq](man/hcsim-gfastq.md) | Generating clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [align](man/hcsim-align.md) | Aligning clone FASTQ file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [downsam](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel.md) |
-| [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-calling.md) |
-| [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of CHISEL nonormal preprocessing | [Final outputs](doc/chisel-cloning.md) |
+| SubCommand | Description | Required input |
+|--------------|-------------|----------------|
+| [sim](man/hcsim-sim.md) | Running the complete HCSIM pipeline | a reference genome file |
+| [gprofile](man/hcsim-gprofile.md) | Generating CNA profile | a reference genome file |
+| [gfasta](man/hcsim-gfasta.md) | Generating clone FASTA file | One or more running directories of previous runs of `gprofile` |
+| [gfastq](man/hcsim-gfastq.md) | Generating clone FASTQ file | One or more running directories of previous runs of `gfasta` |
+| [align](man/hcsim-align.md) | Aligning clone FASTQ file | One or more running directories of previous runs of `gfastq` |
+| [downsam](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of `align` |
+| [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of `downsam` | [Final outputs](doc/chisel-calling.md) |
+| [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of `bcbam` | [Final outputs](doc/chisel-cloning.md) |
 
 
 Click on the name of each command to obtain a description of all the available parameters.
+
+<a name="class"></a>
+### HCSIM Class
+
+<a name="outputs"></a>
+### HCSIM Outputs
 
 ## 3. Quick start
 The following code runs SCSilicon.
@@ -168,12 +176,6 @@ simulator = scs.SCSilicon2(ref_genome='your reference fasta file here', snp_file
 simulator.sim_dataset()
 ```
 
-## 4. Input file required
-
-1. **A reference genome file with fasta format.**  
-Please refer to the example fasta file `example/input/chr22.fa`.
-2. **A list of SNPs.**   
-The SNPs in this list can be introduced in arbitrary positions of the genome. Please refer to the example snp list file `example/input/dbsnp.tsv`.
 
 ## 5. Output files of SCSilicon2
 The output directory contains three subfolders: fastq folder, fasta folder and profile folder. The structure of one example output directory is listed as follows (the clone no is 3 and the cell no is 10 in this example):
