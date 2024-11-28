@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "HCSIM"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
   "pandas",
-  "numpy>=1.16.1",
+  "numpy>=1.16.1,<1.25",
   "matplotlib>=3.0.2",
   "networkx>=3.2.1",
 ]
