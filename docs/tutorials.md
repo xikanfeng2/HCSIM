@@ -296,6 +296,10 @@ This folder contains all BAM files for all clones, such as `normal.bam`, `clone1
 
 This folder contains all BAM files for all cells in each clone, such as `normal_cell1.bam`, `clone1_cell1.bam`.
 
+#### `barcode_bam` folder
+
+This folder contains barcode bam generating from all cell bams.
+
 #### `log` folder
 
 This folder contains all log files for all HCSIM steps. 

@@ -1184,12 +1184,12 @@ class HCSIM:
 
         # out maternal cnv matrix
         indexes = ref['Chromosome'] + ':' + ref['Start'].astype(str) + '-' + ref['End'].astype(str)
-        m_cnv = ref.filter(like='maternal_cnvs')
+        m_cnv = ref.filter(like='maternal_cnas')
         m_cnv.index = indexes
         m_cnv.to_csv(os.path.join(outdir, 'maternal_cna_matrix.csv'))
 
         # out paternal cnv matrix
-        p_cnv = ref.filter(like='paternal_cnvs')
+        p_cnv = ref.filter(like='paternal_cnas')
         p_cnv.index = indexes
         p_cnv.to_csv(os.path.join(outdir, 'paternal_cna_matrix.csv'))
 
@@ -1631,7 +1631,7 @@ class HCSIM:
 
         self.log('Storing the tree to json file...', level='PROGRESS')
         random_tree.save_tree_to_file(root, tree_json)
-        self.log('align BYEBYE')
+        self.log('downsam BYEBYE')
 
     def pbam(self):
         self.log('Setting directories', level='PROGRESS')
