@@ -5,7 +5,7 @@ import os
 import random
 import sys
 from collections import deque
-from multiprocessing import Pool
+from multiprocessing import Pool, Value, Lock
 
 import pandas as pd
 
@@ -15,6 +15,26 @@ from .utils import ProgressBar, bcolors
 
 
 pd.options.mode.chained_assignment = None
+
+def init_gfasta(lock, counter, l):
+    global gfasta_bar
+    gfasta_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
+def init_gfastq(lock, counter, l):
+    global gfastq_bar
+    gfastq_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
+def init_align(lock, counter, l):
+    global align_bar
+    align_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
+def init_downsam(lock, counter, l):
+    global downsam_bar
+    downsam_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
+def init_pbam(lock, counter, l):
+    global pbam_bar
+    pbam_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
 
 class HCSIM:
     def __init__(self, 
@@ -1081,7 +1101,7 @@ class HCSIM:
     def _generate_fasta_for_each_clone(self, job):
         (clone, ref, changes, maternal_genome, paternal_genome, outdir) = job
 
-        bar.progress(advance=False, msg="Start generating fasta file for {}".format(clone.name))
+        gfasta_bar.progress(advance=False, msg="Start generating fasta file for {}".format(clone.name))
 
         clone.maternal_fasta = os.path.join(outdir, clone.name+'_maternal.fasta')
         clone.paternal_fasta = os.path.join(outdir, clone.name+'_paternal.fasta')
@@ -1149,8 +1169,8 @@ class HCSIM:
         # clone.fasta = os.path.join(outdir, clone.name+'.fasta')
         # command = """sed '/^>chr/ s/$/-A/' {0} > {1} && sed '/^>chr/ s/$/-B/' {2} >> {1}""".format(clone.maternal_fasta, clone.fasta, clone.paternal_fasta)
         # utils.runcmd(command, self.outdir)
-        bar.progress(advance=True, msg="Finish generating fasta file for {}".format(clone.name))
-        return clone
+        gfasta_bar.progress(advance=True, msg="Finish generating fasta file for {}".format(clone.name))
+        return (clone)
 
     def _out_cnv_profile(self, root, ref, changes, outdir):
         # out cnv profile csv
@@ -1198,7 +1218,7 @@ class HCSIM:
 
     def _generate_fastq_for_each_clone(self, job):
         (clone, outdir) = job
-        bar.progress(advance=False, msg="Start generating fastq file for {}".format(clone.name))
+        gfastq_bar.progress(advance=False, msg="Start generating fastq file for {}".format(clone.name))
 
         # generate maternal fastq
         pe_reads = round(clone.maternal_fasta_length*self.clone_coverage/(self.reads_len*4), 6)
@@ -1217,7 +1237,7 @@ class HCSIM:
         clone.fq2 = fq2
 
         self._wgsim_process(pe_reads,clone.paternal_fasta,fq1,fq2)
-        bar.progress(advance=True, msg="Finish generating fastq file for {}".format(clone.name))
+        gfastq_bar.progress(advance=True, msg="Finish generating fastq file for {}".format(clone.name))
 
     def _alignment_for_each_clone(self, job):
         (clone, fastq_dir, bam_dir, log_dir) = job
@@ -1246,7 +1266,7 @@ class HCSIM:
         tmp_files = []
         
         #run bwa for maternal
-        bar.progress(advance=False, msg="BWA alignment for {}".format(clone))
+        align_bar.progress(advance=False, msg="BWA alignment for {}".format(clone))
         fq1 = os.path.join(fastq_dir, clone + "_maternal_r1.fq")
         fq2 = os.path.join(fastq_dir, clone + "_maternal_r2.fq")
         sam_file = os.path.join(bam_dir, clone+"_maternal.sam")
@@ -1262,7 +1282,7 @@ class HCSIM:
         utils.runcmd(command, bwa_log)
 
         # samtools sam to bam
-        bar.progress(advance=False, msg="Samtools sam to bam for {}".format(clone))
+        align_bar.progress(advance=False, msg="Samtools sam to bam for {}".format(clone))
         sam_file = os.path.join(bam_dir, clone+"_maternal.sam")
         bam_file = os.path.join(bam_dir, clone+"_maternal.bam")
         tmp_files.append(bam_file)
@@ -1275,7 +1295,7 @@ class HCSIM:
         command = "{0} view -@ {1} -bS {2} > {3}".format(self.samtools, self.thread, sam_file, bam_file)
         utils.runcmd(command, samtools_log)
 
-        bar.progress(advance=False, msg="Samtools sort bam for {}".format(clone))
+        align_bar.progress(advance=False, msg="Samtools sort bam for {}".format(clone))
         bam_file = os.path.join(bam_dir, clone+"_maternal.bam")
         sorted_bam_file = os.path.join(bam_dir, clone+"_maternal.sorted.bam")
         tmp_files.append(sorted_bam_file)
@@ -1288,7 +1308,7 @@ class HCSIM:
         command = "{0} sort -@ {1} {2} -o {3}".format(self.samtools, self.thread, bam_file, sorted_bam_file)
         utils.runcmd(command, samtools_log)
 
-        bar.progress(advance=False, msg="Samtools merge maternal and paternal bam for {}".format(clone))
+        align_bar.progress(advance=False, msg="Samtools merge maternal and paternal bam for {}".format(clone))
         clone_bam = os.path.join(bam_dir, clone+".bam")
         m_sorted_bam_file = os.path.join(bam_dir, clone+"_maternal.sorted.bam")
         p_sorted_bam_file = os.path.join(bam_dir, clone+"_paternal.sorted.bam")
@@ -1299,7 +1319,7 @@ class HCSIM:
         for tmp_file in tmp_files:
             if os.path.exists(tmp_file) and os.path.exists(clone_bam):
                 os.remove(tmp_file)
-        bar.progress(advance=True, msg="Finish alignment process for {}".format(clone))
+        align_bar.progress(advance=True, msg="Finish alignment process for {}".format(clone))
 
     def _downsampling_cell_bam(self, job):
         (ratio, clone_bam_file, cell_bam_file, log_dir) = job
@@ -1307,10 +1327,10 @@ class HCSIM:
         samtools_log = os.path.join(log_dir, 'samtools_log.txt')
         cell_name = os.path.splitext(os.path.basename(cell_bam_file))[0]
 
-        bar.progress(advance=False, msg="Downsampling cell bam for {}".format(cell_name))
+        downsam_bar.progress(advance=False, msg="Downsampling cell bam for {}".format(cell_name))
         command = "{0} view -@ {1} -b -s {2} {3} > {4}".format(self.samtools, self.thread, ratio, clone_bam_file, cell_bam_file)
         utils.runcmd(command, samtools_log)
-        bar.progress(advance=True, msg="Finish downsampling cell bam for {}".format(cell_name))
+        downsam_bar.progress(advance=True, msg="Finish downsampling cell bam for {}".format(cell_name))
 
     def _process_cell_bam(self, job):
         (cell, dcell, dtmp, dlog) = job
@@ -1324,19 +1344,19 @@ class HCSIM:
         picard_log = os.path.join(dlog, 'picard_log.txt')
         tmp_files = [bam_file, sorted_bam_file, dedup_bam_file, dedup_metrics_file]
 
-        bar.progress(advance=False, msg="Picard SortSam for {}".format(cell))
+        pbam_bar.progress(advance=False, msg="Picard SortSam for {}".format(cell))
         command = """java -Xmx40G -Djava.io.tmpdir={3} -XX:ParallelGCThreads={4} -jar {0} SortSam \
                     INPUT={1} OUTPUT={2} \
                     SORT_ORDER=coordinate TMP_DIR={3}""".format(self.picard, bam_file, sorted_bam_file, dtmp, self.thread)
         utils.runcmd(command, picard_log)
 
         #run samtools build index
-        bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
+        pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
         command = "{0} index {1}".format(self.samtools, sorted_bam_file)
         utils.runcmd(command, samtools_log)
 
         # run picard dedup
-        bar.progress(advance=False, msg="Picard MarkDuplicates for {}".format(cell))
+        pbam_bar.progress(advance=False, msg="Picard MarkDuplicates for {}".format(cell))
         command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} MarkDuplicates \
                     REMOVE_DUPLICATES=true \
                     I={1} O={2} \
@@ -1346,7 +1366,7 @@ class HCSIM:
         utils.runcmd(command, picard_log)
 
         # run picard add read group
-        bar.progress(advance=False, msg="Picard AddOrReplaceReadGroups for {}".format(cell))
+        pbam_bar.progress(advance=False, msg="Picard AddOrReplaceReadGroups for {}".format(cell))
         command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} AddOrReplaceReadGroups \
                     INPUT={1} OUTPUT={2} \
                     RGID={3} \
@@ -1356,7 +1376,7 @@ class HCSIM:
                     RGSM={3} TMP_DIR={4}""".format(self.picard, dedup_bam_file, rg_dedup_bam_file, cell, dtmp, self.thread)
         utils.runcmd(command, picard_log)
 
-        bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
+        pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
         command = "{0} index {1}".format(self.samtools, rg_dedup_bam_file)
         utils.runcmd(command, samtools_log)
 
@@ -1367,7 +1387,7 @@ class HCSIM:
         
         # rename cell bam
         os.rename(rg_dedup_bam_file, bam_file)
-        bar.progress(advance=True, msg="Finish cell bam processing for {}".format(cell))
+        pbam_bar.progress(advance=True, msg="Finish cell bam processing for {}".format(cell))
     
     def gprofile(self):
         self.log('Setting directories', level='PROGRESS')
@@ -1464,20 +1484,22 @@ class HCSIM:
 
         # set parallel jobs for each clone
         jobs = [(clone, ref, changes, maternal_genome, paternal_genome, dfasta) for clone in random_tree.collect_all_nodes(root)]
-        global bar
-        bar = ProgressBar(total=len(jobs), length=40, verbose=False)
-        pool = Pool(processes=min(self.thread, len(jobs)))
-        
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=min(self.thread, len(jobs)), initializer=init_gfasta, initargs=init_args)
+
         self.log('Generating fasta file for each clone...', level='PROGRESS')
         for clone in pool.imap_unordered(self._generate_fasta_for_each_clone, jobs):
-            random_tree.update_node_in_tree(root, clone)
+            print(clone.maternal_fasta)
+            root = random_tree.update_node_in_tree(root, clone)
         pool.close()
         pool.join()
 
         self.log('Storing the tree to json file...', level='PROGRESS')
         random_tree.save_tree_to_file(root, tree_json)
         self.log('gfasta BYEBYE')
-    
+
     def gfastq(self):
         self.log('Setting directories', level='PROGRESS')
         dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
@@ -1498,9 +1520,10 @@ class HCSIM:
             jobs.append((clone, dfastq))
 
         # set parallel jobs for each clone
-        global bar
-        bar = ProgressBar(total=len(jobs), length=40, verbose=False)
-        pool = Pool(processes=min(self.thread, len(jobs)))
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=min(self.thread, len(jobs)), initializer=init_gfastq, initargs=init_args)
         
         self.log('Generating fastq file for each clone...', level='PROGRESS')
         for _ in pool.imap_unordered(self._generate_fastq_for_each_clone, jobs):
@@ -1538,9 +1561,10 @@ class HCSIM:
             jobs.append((clone.name, dfastq, dclone, dlog))
 
         # set parallel jobs for each clone
-        global bar
-        bar = ProgressBar(total=len(jobs), length=40, verbose=False)
-        pool = Pool(processes=1)
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=1, initializer=init_align, initargs=init_args)
         
         self.log('Aligning fastq file for each clone...', level='PROGRESS')
         for _ in pool.imap_unordered(self._alignment_for_each_clone, jobs):
@@ -1587,9 +1611,10 @@ class HCSIM:
                 jobs.append((ratio, clone_bam_file, cell_bam_file, dlog))
         
         # set parallel jobs for each cell
-        global bar
-        bar = ProgressBar(total=len(jobs), length=40, verbose=False)
-        pool = Pool(processes=1)
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=1, initializer=init_downsam, initargs=init_args)
         
         self.log('Downsampling cell bam...', level='PROGRESS')
         for _ in pool.imap_unordered(self._downsampling_cell_bam, jobs):
@@ -1627,9 +1652,10 @@ class HCSIM:
             jobs.append((cell, dcell, dtmp, dlog))
         
         # set parallel jobs for each cell
-        global bar
-        bar = ProgressBar(total=len(jobs), length=40, verbose=False)
-        pool = Pool(processes=1)
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=1, initializer=init_pbam, initargs=init_args)
         
         self.log('Processing cell bam...', level='PROGRESS')
         for _ in pool.imap_unordered(self._process_cell_bam, jobs):
