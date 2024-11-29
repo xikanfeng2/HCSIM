@@ -19,7 +19,7 @@ from heapq import nlargest
 
 import numpy as np
 
-from .chisel_utils import *
+from hcsim.chisel_utils import *
 
 
 def parse_args():

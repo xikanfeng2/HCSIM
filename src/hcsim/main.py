@@ -1353,6 +1353,7 @@ class HCSIM:
         #run samtools build index
         pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
         command = "{0} index {1}".format(self.samtools, sorted_bam_file)
+        tmp_files.append(sorted_bam_file + '.bai')
         utils.runcmd(command, samtools_log)
 
         # run picard dedup
@@ -1387,6 +1388,7 @@ class HCSIM:
         
         # rename cell bam
         os.rename(rg_dedup_bam_file, bam_file)
+        os.rename(rg_dedup_bam_file + '.bai', bam_file + '.bai')
         pbam_bar.progress(advance=True, msg="Finish cell bam processing for {}".format(cell))
     
     def gprofile(self):
