@@ -135,7 +135,7 @@ HCSIM requires 3 input data:
 
 An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/dbsnp.tsv). If this file is not provided, HCSIM will randomly introduce SNPs into the reference genome based on the snp-ratio parameter.
 
-3. **A list of contig to exclude (optional).**. This list is optional but highly reccomended. This is a list containing all the contigs in the given reference genome that should be excluded. An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/ignore.txt). HCSIM requires the list to be given in a file with every excluded contig in a new line.
+3. **A list of contig to exclude (optional).** This list is optional but highly reccomended. This is a list containing all the contigs in the given reference genome that should be excluded. An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/ignore.txt). HCSIM requires the list to be given in a file with every excluded contig in a new line.
 
 <a name="hcsim-commands"></a>
 ### HCSIM Commands
