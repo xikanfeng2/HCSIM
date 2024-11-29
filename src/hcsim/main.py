@@ -1158,18 +1158,18 @@ class HCSIM:
             clone = queue.popleft()
             df[clone.name] = ref[clone.name+'_maternal_cnvs'].astype(str) + '|' + ref[clone.name+'_paternal_cnvs'].astype(str)
             queue.extend(clone.children)
-        df.to_csv(os.path.join(outdir, 'cnv_profile.csv'), index=False)
+        df.to_csv(os.path.join(outdir, 'cna_profile.csv'), index=False)
 
         # out maternal cnv matrix
         indexes = ref['Chromosome'] + ':' + ref['Start'].astype(str) + '-' + ref['End'].astype(str)
         m_cnv = ref.filter(like='maternal_cnvs')
         m_cnv.index = indexes
-        m_cnv.to_csv(os.path.join(outdir, 'maternal_cnv_matrix.csv'))
+        m_cnv.to_csv(os.path.join(outdir, 'maternal_cna_matrix.csv'))
 
         # out paternal cnv matrix
         p_cnv = ref.filter(like='paternal_cnvs')
         p_cnv.index = indexes
-        p_cnv.to_csv(os.path.join(outdir, 'paternal_cnv_matrix.csv'))
+        p_cnv.to_csv(os.path.join(outdir, 'paternal_cna_matrix.csv'))
 
         # out changes profile
         columns = ['Parent', 'Child', 'Haplotype', 'Type', 'Segment', 'Change']

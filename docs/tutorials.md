@@ -13,7 +13,7 @@
 3. [Usage](#usage)
     - [Required data](#requireddata)
     - [Commands](#commands)
-    - [HCSIM Class](#class)
+    - [Class](#class)
     - [Outputs](#outputs)
 
 <a name="overview"></a>
@@ -26,7 +26,7 @@
 <a name="types"></a>
 ### CNA Types
 
-**HCSIM** have provided **nine types of hcCNAs**. The two basic hcCNA types are **deletion (DEL)**, indicating CN loss, and **duplication (DUP)**, indicating CN gain. Next, HCSIM summarizes complex hcCNA associated with **loss of heterozygosity (LOH)** with three types. LOH means the loss of one parental allele in a region, which removes genetic diversity. 1) **LOH with copy mumber loss (CNL-LOH)** means the remaining allele reduces the copy number below two, i.e. 1m0. 2) **CN-neutral LOH (CNN-LOH)** refers to a genetic state where one allele has a copy number of two, while the other allele has zero copies, resulting in a normal total copy number but the loss of heterozygosity~\cite{chen2015allele, shen2016facets}, i.e., 2m0. 3) **CN-gain LOH (CNG-LOH)** refers to the remaning allele has a copy number larger than two, e.g., 3m0, 4m0. Besides, we have the **whole chromosome loss (WCL)**, the complete loss of an entire chromosome, resulting in substantial genetic material loss, which can drive tumor progression by affecting many genes at once. We summarize the complex hcCNA associated with CN gain with two types. 1) **Gain of heterozygosity (GOH)** is an increase in the number of different alleles due to extra copies, potentially facilitating adaptation by introducing new mutations. 2) **Whole genome doubling (WGD)** is a process where the entire genome is duplicated, leading to an overall increase in copy number that promotes further chromosomal instability. Lastly, we have complex hcCNA related to haplotype status, **mirror CNAs** involve reciprocal changes in copy numbers between homologous chromosomes, e.g., the copy numbers of two genomic regions (A and B) being CN(A)=1 and CN(B)=2 in one haplotype, while in another haplotype, the copy numbers of those two bins are reversed, with CN(A)=2 and CN(B)=1.
+**HCSIM** have provided **nine types of hcCNAs**. The two basic hcCNA types are **deletion (DEL)**, indicating CN loss, and **duplication (DUP)**, indicating CN gain. Next, HCSIM summarizes complex hcCNA associated with **loss of heterozygosity (LOH)** with three types. LOH means the loss of one parental allele in a region, which removes genetic diversity. 1) **LOH with copy mumber loss (CNL-LOH)** means the remaining allele reduces the copy number below two, i.e. 1m0. 2) **CN-neutral LOH (CNN-LOH)** refers to a genetic state where one allele has a copy number of two, while the other allele has zero copies, resulting in a normal total copy number but the loss of heterozygosity, i.e., 2m0. 3) **CN-gain LOH (CNG-LOH)** refers to the remaning allele has a copy number larger than two, e.g., 3m0, 4m0. Besides, we have the **whole chromosome loss (WCL)**, the complete loss of an entire chromosome, resulting in substantial genetic material loss, which can drive tumor progression by affecting many genes at once. We summarize the complex hcCNA associated with CN gain with two types. 1) **Gain of heterozygosity (GOH)** is an increase in the number of different alleles due to extra copies, potentially facilitating adaptation by introducing new mutations. 2) **Whole genome doubling (WGD)** is a process where the entire genome is duplicated, leading to an overall increase in copy number that promotes further chromosomal instability. Lastly, we have complex hcCNA related to haplotype status, **mirror CNAs** involve reciprocal changes in copy numbers between homologous chromosomes, e.g., the copy numbers of two genomic regions (A and B) being CN(A)=1 and CN(B)=2 in one haplotype, while in another haplotype, the copy numbers of those two bins are reversed, with CN(A)=2 and CN(B)=1.
 
 <a name="setup"></a>
 ## Installation
@@ -114,7 +114,7 @@ HCSIM also requires few standard additional tools, which should be included in `
 
 1. [Required data](#requireddata)
 2. [Commands](#commands)
-3. [HCSIM Class](#class)
+3. [Class](#class)
 4. [Outputs](#outputs)
 
 <a name="requireddata"></a>
@@ -140,8 +140,11 @@ An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob
 <a name="commands"></a>
 ### HCSIM Commands
 
-HCSIM offers different sub commands to run either the entire pipeline with all the steps or only some specific steps. In particular, the latter commands are useful when user wants to re-run some specific steps by varying some of the default parameters.
-Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcsim sim`.
+HCSIM offers different sub commands to run either the entire pipeline with all the steps or only some specific steps. In particular, the latter commands are useful when user wants to re-run some specific steps by varying some of the default parameters. Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcsim sim`.
+
+```{note}
+The complete HCSIM pipeline will sequentially execute the following modules in order: gprofile -> gfasta -> gfastq -> align -> downsam -> pbam -> bcbam. If you want to re-run one of these steps, please make sure the previous commands have been successfully executed.
+```
 
 | SubCommand | Description | Required input |
 |--------------|-------------|----------------|
@@ -160,183 +163,150 @@ Click on the name of each command to obtain a description of all the available p
 <a name="class"></a>
 ### HCSIM Class
 
+In addition to HCSIM commands, HCSIM also provides the HCSIM class, allowing users to import HCSIM for use in the Python console. The following is an example of using the HCSIM class in the Python console.
+
+
+```Python
+from hcsim import HCSIM
+
+# init HCSIM object with params
+hcsim = HCSIM(ref_genome='hg38.fa', clone_no=10, cell_no=100)
+
+# equivalent to the hcsim sim subcommand
+hcsim.sim()
+
+# equivalent to the hcsim gprofile subcommand
+hcsim.gprofile()
+
+# equivalent to the hcsim gfasta subcommand
+hcsim.gfasta()
+
+# equivalent to the hcsim gfastq subcommand
+hcsim.gfastq()
+
+# equivalent to the hcsim align subcommand
+hcsim.align()
+
+# equivalent to the hcsim downsam subcommand
+hcsim.downsam()
+
+# equivalent to the hcsim pbam subcommand
+hcsim.pbam()
+
+# equivalent to the hcsim bcbam subcommand
+hcsim.bcbam()
+```
+
+The parameters supported by the HCSIM class are the same as those supported by the HCSIM command. Below are all the supported parameters. 
+
+```Python
+class HCSIM:
+    def __init__(self, 
+        ref_genome: str, 
+        snp_list: str = None, 
+        ignore: str = None, 
+        outdir: str = './', 
+        clone_no: int = 2, 
+        cell_no: int = 2, 
+        max_tree_depth: int = 4, 
+        bin_size: str = '5Mb', 
+        snp_ratio: float = 0.001, 
+        thread: int = None, 
+        heho_ratio: float = 0.67, 
+        cna_prob_cutoff: float = 0.8, 
+        clone_coverage: float = 30, 
+        cell_coverage: float = 0.5, 
+        reads_len: int = 150, 
+        insertion_size: int = 350, 
+        error_rate: float = 0.0, 
+        wgd_cna_no: int = 0, 
+        wcl_cna_no: int = 0, 
+        loh_cna_no: int = 30, 
+        goh_cna_no: int = 10, 
+        mirror_cna_no: int = 10, 
+        barcode_len: int = 12,
+        wgsim: str = 'wgsim', 
+        samtools: str = 'samtools', 
+        bwa: str = 'bwa', 
+        picard: str = 'picard.jar',
+        bcftools: str = 'bcftools'):
+```
+
 <a name="outputs"></a>
 ### HCSIM Outputs
 
-## 3. Quick start
-The following code runs SCSilicon.
-
-```
-import scsilicon2 as scs
-
-# create SCSilicon2 object: ref_genome and snp_file are required, and outdir, clone_no, and cell_no are optional.
-simulator = scs.SCSilicon2(ref_genome='your reference fasta file here', snp_file='your snp list file here', outdir='your output directory here', clone_no=4, cell_no=10)
-
-# simulate dataset
-simulator.sim_dataset()
-```
+The command `hcsim sim` runs the entire HCSIM pipeline starting from the required reference genome. During the executiong, the command creates eight folders which contain the temporary and final outputs produced by the each step of HCSIM.
 
 
-## 5. Output files of SCSilicon2
-The output directory contains three subfolders: fastq folder, fasta folder and profile folder. The structure of one example output directory is listed as follows (the clone no is 3 and the cell no is 10 in this example):
+#### `profile` folder
 
-```
-output
- |-fastq
- | |-normal_r2.fq
- | |-clone2
- | | |-cell0_r1.fq
- | | |-cell0_r2.fq
- | |-normal_r1.fq
- | |-clone2_r2.fq
- | |-clone1_r1.fq
- | |-clone0_r2.fq
- | |-clone0
- | | |-cell2_r1.fq
- | | |-cell3_r2.fq
- | | |-cell2_r2.fq
- | | |-cell1_r2.fq
- | | |-cell1_r1.fq
- | | |-cell3_r1.fq
- | | |-cell0_r1.fq
- | | |-cell0_r2.fq
- | |-normal
- | | |-cell2_r1.fq
- | | |-cell2_r2.fq
- | | |-cell1_r2.fq
- | | |-cell1_r1.fq
- | | |-cell0_r1.fq
- | | |-cell0_r2.fq
- | |-clone2_r1.fq
- | |-clone1
- | | |-cell1_r2.fq
- | | |-cell1_r1.fq
- | | |-cell0_r1.fq
- | | |-cell0_r2.fq
- | |-clone0_r1.fq
- | |-clone1_r2.fq
- |-fasta
- | |-clone2.fasta
- | |-normal_paternal.fasta
- | |-clone2_paternal.fasta
- | |-clone0.fasta
- | |-clone1.fasta
- | |-clone0_paternal.fasta
- | |-normal.fasta
- | |-clone1_paternal.fasta
- | |-clone2_maternal.fasta
- | |-clone1_maternal.fasta
- | |-clone0_maternal.fasta
- | |-normal_maternal.fasta
- |-profile
- | |-changes.csv
- | |-tree.pdf
- | |-maternal_cnv_matrix.csv
- | |-paternal_cnv_matrix.csv
- | |-phases.csv
- | |-cnv_profile.csv
- | |-tree.newick
-```
+This folder contains all files related to CNA profiles, which are primarily generated by the `hcsim gprofile` command.
 
-* `fasta folder`: stores all the fasta file for each clone.
+1. `cna_profile.csv`: a CSV dataframe containing the haplotype-specific CNAs for each clone. More specifically, the fields are:
+   1. `Chromosome`: the chromosome number
+   2. `Start`: the start position of bin
+   3. `End`: the end position of bin
+   4. `normal`: the allele-specific CNAs of normal clone, such as 1|1
+   5. `clone1`: the allele-specific CNAs of clone1 clone, such as 3|0
+2. `maternal_cna_matrix.csv` and `paternal_cna_matrix.csv`:  the CSV matrix containing the haplotype-specific CNAs of maternal and paternal genome for each clone. These two matrices essentially break down the above CNV profile file, making it more convenient for subsequent plotting and analysis workflows.
+3. `changes.csv`: a CSV dataframe containing all the CNA changes. More specifically, the fields are:
+	1. `Parent`: the parental clone
+	2.	`Child`: the child clone
+	3.	`Haplotype`: maternal or paternal genome
+	4.	`Type`: type of CNA, all possible types includes `WGD`, `WCL`, `CNL_LOH`, `CNN_LOH`, `CNG_LOH`, `GOH`, `Mirror CNA`, `DUP` and `DEL`
+	5.	`Segment`: the genomic bin where CNA occurs
+	6.	`Change`: detailed changes in CNA
 
-* `fastq folder`: stores all the paired-reads with fastq format for each clone and each cell.
+    The example line following in `changes.csv` means that, transitioning from the normal clone to clone1, a duplication CNA occurs in the maternal genome within the genomic bin chr1:105000001-110000000, with the CNA changing from 1 to 3.
 
-*  `profile folder`: stores all the profile file which is related to the simulation process. The detailed explanation of the format for each file in this folder is as follows.
+    ```CSV
+    normal,clone1,maternal,DUP,chr1:105000001-110000000,1->3
+    ```
+4. `snp_phases.csv`: a CSV dataframe containing all the SNPs inserted to reference genome. Each line represents a SNP. For the phasing result, 0 means the allele is the same as the allele in the reference genome, while 1 means it is the opposite. Below is an example.
 
-    1. `changes.csv`: stores the evlution path for each clone. One example is listed below:
+    ```CSV
+    chr1,844308,C,A,1|0
+    chr1,849963,A,G,1|0
+    chr1,850556,A,G,1|0
+    chr1,851587,C,A,1|0
+    chr1,852718,T,A,1|0
+    chr1,855396,G,A,0|1
+    chr1,857116,A,C,1|0
+    chr1,859092,A,T,1|0
+    chr1,859133,T,G,0|1
+    chr1,859277,C,T,0|1
+    ```
+5. `tree.newick`, `tree.pdf` and `tree.json`: the cell-lineage tree in different formats.
+6. `barcodes.txt`: the cell list file, with each line representing a cell name.
+7. `reference.csv`: a CSV dataframe containing the genomic position information for all bins in the reference genome. This file is used to re-run specific sub-commands.
 
-        |Parent|Child |Haplotype|Type|Segment                |Change|
-        |------|------|---------|----|-----------------------|------|
-        |normal|clone0|paternal |dup |chr22:500001-1000000   |1->3  |
-        |normal|clone0|maternal |del |chr22:3500001-4000000  |1->0  |
-        |normal|clone0|maternal |dup |chr22:4000001-4500000  |1->2  |
-        |normal|clone0|maternal |dup |chr22:5000001-5500000  |1->2  |
-        |normal|clone0|maternal |dup |chr22:8000001-8500000  |1->4  |
- 
+#### `fasta` folder
 
-    2. `cnv_profile.csv`: stores the cnv ground truth for ech clone with maternal|paternal format. One example is listed below:
+This folder contains all maternal and paternal fasta files for all clones.
 
-        |Chromosome|Start |End     |clone0|clone1                 |clone2|
-        |----------|------|--------|------|-----------------------|------|
-        |chr22     |1     |500000  |1&#124;1   |3&#124;1                    |3&#124;1   |
-        |chr22     |500001|1000000 |1&#124;3   |1&#124;3                    |3&#124;5   |
-        |chr22     |1000001|1500000 |1&#124;1   |3&#124;2                    |3&#124;2   |
-        |chr22     |1500001|3000000 |1&#124;1   |1&#124;1                    |1&#124;1   |
-        |chr22     |3000001|3500000 |1&#124;1   |3&#124;2                    |3&#124;2   |
- 
+#### `fastq` folder
 
-    3. `maternal_cnv_matrix.csv` and `paternal_cnv_matrix.csv`: store the cnv matrix of each clone seperated by maternal haplotype and paternal haplotype. One example is listed below:
+This folder contains all maternal and paternal fastq files for all clones.
 
-        |Index|clone0_maternal_cnvs|clone1_maternal_cnvs|clone2_maternal_cnvs|
-        |------|--------------------|--------------------|--------------------|
-        |chr22:1-500000|1                   |3                   |3                   |
-        |chr22:500001-1000000|1                   |1                   |3                   |
-        |chr22:1000001-1500000|1                   |3                   |3                   |
-        |chr22:1500001-3000000|1                   |1                   |1                   |
-        |chr22:3000001-3500000|1                   |3                   |3                   |
-    
-    4. `phases.csv`: stores the SNPs in maternal|paternal haplotype. One example is listed below:
+#### `clone_bams` folder
 
-        |chr22 |16578327|1&#124;0     |
-        |------|--------|--------|
-        |chr22 |17307398|1&#124;0     |
-        |chr22 |18025718|1&#124;0     |
-        |chr22 |21416314|0&#124;1     |
-        |chr22 |22418251|1&#124;0     |
+This folder contains all BAM files for all clones, such as `normal.bam`, `clone1.bam`.
 
-    5. `tree.newick` and `tree.pdf`: the cnv elution tree with newick format and pdf format.
+#### `cell_bams` folder
 
-    The example profile folder can be found in `data/profile` folder.
+This folder contains all BAM files for all cells in each clone, such as `normal_cell1.bam`, `clone1_cell1.bam`.
 
-## 6. `SCSilicon2` object
-All the general parameters for the SCSilicon2 simulation are stored in a `SCSilicon2` object. Let’s create a new one.
+#### `log` folder
 
-```Python
-simulator = scs.SCSilicon2()
-```
+This folder contains all log files for all HCSIM steps. 
 
-### 6.1 All parameters in `SCSilicon2` object
+1. `hcsim_log.txt`: the log information generated by HCSIM piepline.
+2. `samtools_log.txt`: the log information generated by samtools.
+3. `bwa_log.txt`: the log information generated by bwa.
+4. `wgsim_log.txt`: the log information generated by wgsim.
+5. `picard_log.txt`: the log information generated by picard tools.
+6. `barcode_bam_log.txt`: the log information generated by `hcsim bcbam` command.
 
-* `ref_genome`: str, required<br>
-    The reference genome file path
-        
-* `snp_file`: str, required<br>
-    The snp list file
+### `tmp` folder
 
-* `outdir`: str, optional, default: './'<br>
-    The output directory
-
-* `clone_no`: int, optional, default: 1<br>
-    The random clone number contained in evolution tree
-
-* `cell_no`: int, optional, default: 2<br>
-    The total cell number for this simultion dataset. Please make sure the `cell_no` is large than `clone_no`. At least one cell is geneated for nomal case.
-
-* `max_cnv_tree_depth`: int, optional, default: 4<br>
-    The maximum depth of random evolution tree
-
-* `bin_len`: int, optional, default: 500000<br>
-    The fixed bin length
-
-* `HEHOratio`: float, optional, default: 0.5<br>
-    Ratio of heterozygous SNPs
-
-* `cnv_prob_cutoff`: float, optional, default: 0.8<br>
-    The cutoff probability of a bin undergoing CNV, if random probability is larger than cutoff, CNV happens
-
-* `clone_coverage`: float, optional, default: 30<br>
-    The coverage for clone fastq file
-
-* `cell_coverage`: float, optional, default: 0.5<br>
-    The coverage for each cell in a clone
-
-* `reads_len`: int, optional, default: 150<br>
-    The reads length in fastq file
-
-* `insertion_size`: int, optional, default: 350<br>
-    The outer distance between the two ends
-
-* `error_rate`: float, optional, default: 0.02<br>
-    The base error rate
-
+This folder contains all temporary files for all HCSIM steps.
