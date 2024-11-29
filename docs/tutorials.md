@@ -4,7 +4,7 @@
 
 1. [Overview](#overview)
     - [Implementation](#implement)
-    - [CNA Types](#types)
+    - [CNA Types](#cna-types)
 2. [Installation](#setup)
     - [Creation of python virtual env](#env)
     - [Standard installation](#standard)
@@ -12,8 +12,8 @@
     - [Dependencies](#depend)
 3. [Usage](#usage)
     - [Required data](#requireddata)
-    - [Commands](#commands)
-    - [Class](#class)
+    - [Commands](#hcsim-commands)
+    - [Class](#hcsim-class)
     - [Outputs](#outputs)
 
 <a name="overview"></a>
@@ -23,7 +23,7 @@
 ### Implementation
 
 
-<a name="types"></a>
+<a name="cna-types"></a>
 ### CNA Types
 
 **HCSIM** have provided **nine types of hcCNAs**. The two basic hcCNA types are **deletion (DEL)**, indicating CN loss, and **duplication (DUP)**, indicating CN gain. Next, HCSIM summarizes complex hcCNA associated with **loss of heterozygosity (LOH)** with three types. LOH means the loss of one parental allele in a region, which removes genetic diversity. 1) **LOH with copy mumber loss (CNL-LOH)** means the remaining allele reduces the copy number below two, i.e. 1m0. 2) **CN-neutral LOH (CNN-LOH)** refers to a genetic state where one allele has a copy number of two, while the other allele has zero copies, resulting in a normal total copy number but the loss of heterozygosity, i.e., 2m0. 3) **CN-gain LOH (CNG-LOH)** refers to the remaning allele has a copy number larger than two, e.g., 3m0, 4m0. Besides, we have the **whole chromosome loss (WCL)**, the complete loss of an entire chromosome, resulting in substantial genetic material loss, which can drive tumor progression by affecting many genes at once. We summarize the complex hcCNA associated with CN gain with two types. 1) **Gain of heterozygosity (GOH)** is an increase in the number of different alleles due to extra copies, potentially facilitating adaptation by introducing new mutations. 2) **Whole genome doubling (WGD)** is a process where the entire genome is duplicated, leading to an overall increase in copy number that promotes further chromosomal instability. Lastly, we have complex hcCNA related to haplotype status, **mirror CNAs** involve reciprocal changes in copy numbers between homologous chromosomes, e.g., the copy numbers of two genomic regions (A and B) being CN(A)=1 and CN(B)=2 in one haplotype, while in another haplotype, the copy numbers of those two bins are reversed, with CN(A)=2 and CN(B)=1.
@@ -113,8 +113,8 @@ HCSIM also requires few standard additional tools, which should be included in `
 ## Usage
 
 1. [Required data](#requireddata)
-2. [Commands](#commands)
-3. [Class](#class)
+2. [Commands](#hcsim-commands)
+3. [Class](#hcsim-class)
 4. [Outputs](#outputs)
 
 <a name="requireddata"></a>
@@ -137,7 +137,7 @@ An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob
 
 3. **A list of contig to exclude (optional).**. This list is optional but highly reccomended. This is a list containing all the contigs in the given reference genome that should be excluded. An example of this list is given [here](https://github.com/xikanfeng2/HCSIM/blob/main/example/ignore.txt). HCSIM requires the list to be given in a file with every excluded contig in a new line.
 
-<a name="commands"></a>
+<a name="hcsim-commands"></a>
 ### HCSIM Commands
 
 HCSIM offers different sub commands to run either the entire pipeline with all the steps or only some specific steps. In particular, the latter commands are useful when user wants to re-run some specific steps by varying some of the default parameters. Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcsim sim`.
@@ -160,7 +160,7 @@ The complete HCSIM pipeline will sequentially execute the following modules in o
 
 Click on the name of each command to obtain a description of all the available parameters.
 
-<a name="class"></a>
+<a name="hcsim-class"></a>
 ### HCSIM Class
 
 In addition to HCSIM commands, HCSIM also provides the HCSIM class, allowing users to import HCSIM for use in the Python console. The following is an example of using the HCSIM class in the Python console.
