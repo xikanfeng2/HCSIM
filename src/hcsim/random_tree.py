@@ -245,3 +245,23 @@ def collect_all_nodes(root, mode=0):
 
     dfs(root)
     return all_nodes
+
+def update_node_in_tree(root, new_node):
+    """
+    Update a node in the tree with the same name as the new_node.
+    If a match is found, the node in the tree is replaced by new_node.
+
+    :param root: The root of the tree.
+    :param new_node: The new node to update.
+    :return: True if the node was updated, False otherwise.
+    """
+    def dfs(node):
+        if node.name == new_node.name:
+            node = new_node
+            return True
+        for child in node.children:
+            if dfs(child):
+                return True
+        return False
+
+    return dfs(root)

@@ -584,8 +584,8 @@ class HCSIM:
         for i in range(ref.shape[0]):
             root.maternal_cnvs.append(1)
             root.paternal_cnvs.append(1)
-        ref[root.name+'_maternal_cnvs'] = root.maternal_cnvs
-        ref[root.name+'_paternal_cnvs'] = root.paternal_cnvs
+        ref[root.name+'_maternal_cnas'] = root.maternal_cnvs
+        ref[root.name+'_paternal_cnas'] = root.paternal_cnvs
         
         # add the children of normal clone to queue
         queue = deque(root.children)
@@ -1072,8 +1072,8 @@ class HCSIM:
                         clone.paternal_cnvs[i] = p_cnv
                         clone.changes[i] = 'REGULAR'
             
-            ref[clone.name+'_maternal_cnvs'] = clone.maternal_cnvs
-            ref[clone.name+'_paternal_cnvs'] = clone.paternal_cnvs
+            ref[clone.name+'_maternal_cnas'] = clone.maternal_cnvs
+            ref[clone.name+'_paternal_cnas'] = clone.paternal_cnvs
             queue.extend(clone.children)
 
         return ref, changes, maternal_genome, paternal_genome
@@ -1093,8 +1093,8 @@ class HCSIM:
                     p_output.write('>'+chrom+'\n')
                     chrom_ref = ref[ref['Chromosome'] == chrom]
                     for index, row in chrom_ref.iterrows():
-                        m_cnv = int(row[clone.name+'_maternal_cnvs'])
-                        p_cnv = int(row[clone.name+'_paternal_cnvs'])
+                        m_cnv = int(row[clone.name+'_maternal_cnas'])
+                        p_cnv = int(row[clone.name+'_paternal_cnas'])
                         start = int(row['Start'])
                         end = int(row['End'])
 
@@ -1150,6 +1150,7 @@ class HCSIM:
         # command = """sed '/^>chr/ s/$/-A/' {0} > {1} && sed '/^>chr/ s/$/-B/' {2} >> {1}""".format(clone.maternal_fasta, clone.fasta, clone.paternal_fasta)
         # utils.runcmd(command, self.outdir)
         bar.progress(advance=True, msg="Finish generating fasta file for {}".format(clone.name))
+        return clone
 
     def _out_cnv_profile(self, root, ref, changes, outdir):
         # out cnv profile csv
@@ -1157,7 +1158,7 @@ class HCSIM:
         queue = deque([root])
         while queue:
             clone = queue.popleft()
-            df[clone.name] = ref[clone.name+'_maternal_cnvs'].astype(str) + '|' + ref[clone.name+'_paternal_cnvs'].astype(str)
+            df[clone.name] = ref[clone.name+'_maternal_cnas'].astype(str) + '|' + ref[clone.name+'_paternal_cnas'].astype(str)
             queue.extend(clone.children)
         df.to_csv(os.path.join(outdir, 'cna_profile.csv'), index=False)
 
@@ -1468,8 +1469,8 @@ class HCSIM:
         pool = Pool(processes=min(self.thread, len(jobs)))
         
         self.log('Generating fasta file for each clone...', level='PROGRESS')
-        for _ in pool.imap_unordered(self._generate_fasta_for_each_clone, jobs):
-            pass
+        for clone in pool.imap_unordered(self._generate_fasta_for_each_clone, jobs):
+            random_tree.update_node_in_tree(root, clone)
         pool.close()
         pool.join()
 
