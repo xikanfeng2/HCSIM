@@ -1491,7 +1491,6 @@ class HCSIM:
 
         self.log('Generating fasta file for each clone...', level='PROGRESS')
         for clone in pool.imap_unordered(self._generate_fasta_for_each_clone, jobs):
-            print(clone.maternal_fasta)
             root = random_tree.update_node_in_tree(root, clone)
         pool.close()
         pool.join()
