@@ -146,7 +146,7 @@ HCSIM offers different sub commands to run either the entire pipeline with all t
 The complete HCSIM pipeline will sequentially execute the following modules in order: gprofile -> gfasta -> gfastq -> align -> downsam -> pbam -> bcbam. If you want to re-run one of these steps, please make sure the previous commands have been successfully executed.
 ```
 
-```note
+```{note}
 Click on the name of each command to obtain a description of all the available parameters.
 ```
 
