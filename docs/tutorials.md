@@ -146,6 +146,10 @@ HCSIM offers different sub commands to run either the entire pipeline with all t
 The complete HCSIM pipeline will sequentially execute the following modules in order: gprofile -> gfasta -> gfastq -> align -> downsam -> pbam -> bcbam. If you want to re-run one of these steps, please make sure the previous commands have been successfully executed.
 ```
 
+```note
+Click on the name of each command to obtain a description of all the available parameters.
+```
+
 | SubCommand | Description | Required input |
 |--------------|-------------|----------------|
 | [sim](man/hcsim-sim.md) | Running the complete HCSIM pipeline | a reference genome file |
@@ -156,9 +160,6 @@ The complete HCSIM pipeline will sequentially execute the following modules in o
 | [downsam](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of `align` |
 | [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of `downsam` | [Final outputs](doc/chisel-calling.md) |
 | [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of `bcbam` | [Final outputs](doc/chisel-cloning.md) |
-
-
-Click on the name of each command to obtain a description of all the available parameters.
 
 <a name="hcsim-class"></a>
 ### HCSIM Class
