@@ -389,19 +389,20 @@ class HCSIM:
         if self.ignore:
             self.ignore_list = utils.parseIgnoreList(self.ignore)
 
-        with open(self.ref_genome, 'r') as refinput:
-            chrom = None
-            for line in refinput:
-                line = line.strip()
-                if line.startswith('>'):
-                    chrom = line.strip()[1:].split()[0]
-                    if chrom not in self.ignore_list:
-                        self.chrom_sizes[chrom] = 0
-                else:
-                    if chrom in self.ignore_list:
-                        continue
-                    linelen = len(line.strip())
-                    self.chrom_sizes[chrom] += linelen
+        # check fasta.fai file
+        fai_file = self.ref_genome + '.fai'
+        if not os.path.exists(fai_file):
+            samtools_log = os.path.join(self.outdir, 'log/samtools_log.txt')
+            cmd = '{0} faidx {1}'.format(self.samtools, self.ref_genome)
+            utils.runcmd(cmd, samtools_log)
+
+        with open(fai_file, "r") as fai:
+            for line in fai:
+                fields = line.strip().split("\t")
+                chrom_name = fields[0]
+                chrom_size = int(fields[1])
+                if chrom_name not in self.ignore_list:
+                    self.chrom_sizes[chrom_name] = chrom_size
 
     def _buildGenome(self, maternalFasta, paternalFasta, allele_phase_file):
         if self.snp_list == None:
@@ -1498,7 +1499,7 @@ class HCSIM:
             new_changes, cnv_profile = self._out_cnv_profile(root, new_ref, changes, dprofile)
 
             mirrored_subclonal_cnas = self._find_mirrored_clones(cnv_profile)
-            if mirrored_subclonal_cnas:
+            if not mirrored_subclonal_cnas.empty:
                 unique_mirrored_subclonal_cnas_no = len(mirrored_subclonal_cnas[['Chromosome', 'Start', 'End']].drop_duplicates())
             loop_no = loop_no + 1
         mirrored_subclonal_cnas.to_csv(os.path.join(dprofile, 'mirrored_subclonal_cnas.csv'), index=False)
