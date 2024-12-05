@@ -1498,9 +1498,10 @@ class HCSIM:
             new_changes, cnv_profile = self._out_cnv_profile(root, new_ref, changes, dprofile)
 
             mirrored_subclonal_cnas = self._find_mirrored_clones(cnv_profile)
-            unique_mirrored_subclonal_cnas_no = len(mirrored_subclonal_cnas[['Chromosome', 'Start', 'End']].drop_duplicates())
+            if mirrored_subclonal_cnas:
+                unique_mirrored_subclonal_cnas_no = len(mirrored_subclonal_cnas[['Chromosome', 'Start', 'End']].drop_duplicates())
             loop_no = loop_no + 1
-        mirrored_subclonal_cnas.to_csv(os.path.join(dprofile, 'mirrored_subclonal_cnas.csv'), inedx=False)
+        mirrored_subclonal_cnas.to_csv(os.path.join(dprofile, 'mirrored_subclonal_cnas.csv'), index=False)
 
         # store the tree to json file
         self.log('Storing the tree to json file...', level='PROGRESS')
