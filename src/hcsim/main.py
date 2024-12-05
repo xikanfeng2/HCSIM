@@ -1499,7 +1499,7 @@ class HCSIM:
         self.log('Generating CNV profile for each clone...', level='PROGRESS')
         loop_no = 1
         unique_mirrored_subclonal_cnas_no = 0
-        while unique_mirrored_subclonal_cnas_no < 5 and loop_no < 5:
+        while unique_mirrored_subclonal_cnas_no < 3 and loop_no < 5:
             ref = self._split_chr_to_bins('all')
             new_ref, changes, maternal_genome, paternal_genome = self._generate_cnv_profile_for_each_clone(root, ref, m_fasta, p_fasta)
             new_changes, cnv_profile = self._out_cnv_profile(root, new_ref, changes, dprofile)
