@@ -251,8 +251,16 @@ This folder contains all files related to CNA profiles, which are primarily gene
    3. `End`: the end position of bin
    4. `normal`: the allele-specific CNAs of normal clone, such as 1|1
    5. `clone1`: the allele-specific CNAs of clone1 clone, such as 3|0
-2. `maternal_cna_matrix.csv` and `paternal_cna_matrix.csv`:  the CSV matrix containing the haplotype-specific CNAs of maternal and paternal genome for each clone. These two matrices essentially break down the above CNV profile file, making it more convenient for subsequent plotting and analysis workflows.
-3. `changes.csv`: a CSV dataframe containing all the CNA changes. More specifically, the fields are:
+2. `mirrored_subclonal_cnas.csv`: a CSV dataframe containing all mirrored_subclonal CNAs in all clones, the fields are:
+   1. `Chromosome`: the chromosome number
+   2. `Start`: the start position of bin
+   3. `End`: the end position of bin
+   4. `Clone1`: the clone name of first mirrored clone
+   5. `Clone2`: the clone name of second mirrored clone
+   6. `Clone1_CNA`: the CNA of clone1
+   7. `Clone2_CNA`: the CNA of clone2
+3. `maternal_cna_matrix.csv` and `paternal_cna_matrix.csv`:  the CSV matrix containing the haplotype-specific CNAs of maternal and paternal genome for each clone. These two matrices essentially break down the above CNV profile file, making it more convenient for subsequent plotting and analysis workflows.
+4. `changes.csv`: a CSV dataframe containing all the CNA changes. More specifically, the fields are:
 	1. `Parent`: the parental clone
 	2.	`Child`: the child clone
 	3.	`Haplotype`: maternal or paternal genome
@@ -265,7 +273,7 @@ This folder contains all files related to CNA profiles, which are primarily gene
     ```CSV
     normal,clone1,maternal,DUP,chr1:105000001-110000000,1->3
     ```
-4. `snp_phases.csv`: a CSV dataframe containing all the SNPs inserted to reference genome. Each line represents a SNP. For the phasing result, 0 means the allele is the same as the allele in the reference genome, while 1 means it is the opposite. Below is an example.
+5. `snp_phases.csv`: a CSV dataframe containing all the SNPs inserted to reference genome. Each line represents a SNP. For the phasing result, 0 means the allele is the same as the allele in the reference genome, while 1 means it is the opposite. Below is an example.
 
     ```CSV
     chr1,844308,C,A,1|0
@@ -279,9 +287,9 @@ This folder contains all files related to CNA profiles, which are primarily gene
     chr1,859133,T,G,0|1
     chr1,859277,C,T,0|1
     ```
-5. `tree.newick`, `tree.pdf` and `tree.json`: the cell-lineage tree in different formats.
-6. `barcodes.txt`: the cell list file, with each line representing a cell name.
-7. `reference.csv`: a CSV dataframe containing the genomic position information for all bins in the reference genome. This file is used to re-run specific sub-commands.
+6. `tree.newick`, `tree.pdf` and `tree.json`: the cell-lineage tree in different formats.
+7. `barcodes.txt`: the cell list file, with each line representing a cell name.
+8. `reference.csv`: a CSV dataframe containing the genomic position information for all bins in the reference genome. This file is used to re-run specific sub-commands.
 
 #### `fasta` folder
 
