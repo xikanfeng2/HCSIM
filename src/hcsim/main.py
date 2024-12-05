@@ -448,7 +448,7 @@ class HCSIM:
                                 while int(currentsnppos) > currentpos and int(currentsnppos) <= currentpos + linelen:
                                     sindex = int(currentsnppos)-currentpos-1
                                     a = line[sindex]
-                                    if random.random() < self.heho_ratio: #Heterozygous
+                                    if a.upper() != 'N' and random.random() < self.heho_ratio: #Heterozygous
                                         if random.random() < 0.5:
                                             a1 = allele1.lower() if a.islower() else allele1.upper()
                                             a2 = allele2.lower() if a.islower() else allele2.upper()
@@ -1171,6 +1171,62 @@ class HCSIM:
         # utils.runcmd(command, self.outdir)
         gfasta_bar.progress(advance=True, msg="Finish generating fasta file for {}".format(clone.name))
         return (clone)
+    def _find_mirrored_clones(self, cnv_profile):
+        """
+        Identify rows with mirrored-clone CNAs in a given CNV CSV file, excluding cases where the 
+        allele-specific CNVs are equal (e.g., 1|1, 2|2).
+
+        Parameters:
+            cnv profile cnv
+
+        Returns:
+            pd.DataFrame: A DataFrame containing rows with mirrored-clone CNAs.
+        """
+        # Read the CSV file into a pandas DataFrame
+        df = cnv_profile
+        
+        # Ensure the first three columns are Chromosome, Start, and End
+        required_columns = ['Chromosome', 'Start', 'End']
+        if not all(col in df.columns[:3] for col in required_columns):
+            raise ValueError("The first three columns must be 'Chromosome', 'Start', and 'End'")
+        
+        # Extract clone columns (columns after the first three)
+        clone_columns = df.columns[3:]
+        
+        # Prepare a list to store rows with mirrored-clone CNAs
+        mirrored_rows = []
+        
+        # Iterate through each row in the DataFrame
+        for _, row in df.iterrows():
+            # Iterate through all pairs of clone columns to check for mirrored CNAs
+            for i in range(len(clone_columns)):
+                for j in range(i + 1, len(clone_columns)):
+                    clone1 = row[clone_columns[i]]
+                    clone2 = row[clone_columns[j]]
+                    
+                    # Split the allele-specific CNV (e.g., "1|2") into two haplotypes
+                    try:
+                        haplotype1 = tuple(map(int, clone1.split('|')))
+                        haplotype2 = tuple(map(int, clone2.split('|')))
+                    except ValueError:
+                        raise ValueError(f"Invalid allele-specific CNV format in row: {row}")
+
+                    # Check if they are mirrored (e.g., (1, 2) and (2, 1)),
+                    # and exclude cases where both haplotypes are equal (e.g., (1, 1) or (2, 2))
+                    if haplotype1 == haplotype2[::-1] and haplotype1[0] != haplotype1[1]:
+                        mirrored_rows.append({
+                            'Chromosome': row['Chromosome'],
+                            'Start': row['Start'],
+                            'End': row['End'],
+                            'Clone1': clone_columns[i],
+                            'Clone2': clone_columns[j],
+                            'Clone1_CNA': clone1,
+                            'Clone2_CNA': clone2
+                        })
+        
+        # Convert the results into a DataFrame
+        mirrored_df = pd.DataFrame(mirrored_rows)
+        return mirrored_df
 
     def _out_cnv_profile(self, root, ref, changes, outdir):
         # out cnv profile csv
@@ -1181,6 +1237,8 @@ class HCSIM:
             df[clone.name] = ref[clone.name+'_maternal_cnas'].astype(str) + '|' + ref[clone.name+'_paternal_cnas'].astype(str)
             queue.extend(clone.children)
         df.to_csv(os.path.join(outdir, 'cna_profile.csv'), index=False)
+
+
 
         # out maternal cnv matrix
         indexes = ref['Chromosome'] + ':' + ref['Start'].astype(str) + '-' + ref['End'].astype(str)
@@ -1198,7 +1256,7 @@ class HCSIM:
         change_df = pd.DataFrame(data=changes, columns=columns)
         change_df.to_csv(os.path.join(outdir, 'changes.csv'), index=False)
         ref.to_csv(os.path.join(outdir, 'reference.csv'), index=False)
-        return change_df
+        return change_df, df
 
     def _merge_fasta_for_each_clone(self, root, outdir):
         # merge fasta for each clone
@@ -1432,9 +1490,17 @@ class HCSIM:
 
         # generate cnv for each clone
         self.log('Generating CNV profile for each clone...', level='PROGRESS')
-        ref = self._split_chr_to_bins('all')
-        new_ref, changes, maternal_genome, paternal_genome = self._generate_cnv_profile_for_each_clone(root, ref, m_fasta, p_fasta)
-        new_changes = self._out_cnv_profile(root, new_ref, changes, dprofile)
+        loop_no = 1
+        unique_mirrored_subclonal_cnas_no = 0
+        while unique_mirrored_subclonal_cnas_no < 5 and loop_no < 5:
+            ref = self._split_chr_to_bins('all')
+            new_ref, changes, maternal_genome, paternal_genome = self._generate_cnv_profile_for_each_clone(root, ref, m_fasta, p_fasta)
+            new_changes, cnv_profile = self._out_cnv_profile(root, new_ref, changes, dprofile)
+
+            mirrored_subclonal_cnas = self._find_mirrored_clones(cnv_profile)
+            unique_mirrored_subclonal_cnas_no = len(mirrored_subclonal_cnas[['Chromosome', 'Start', 'End']].drop_duplicates())
+            loop_no = loop_no + 1
+        mirrored_subclonal_cnas.to_csv(os.path.join(dprofile, 'mirrored_subclonal_cnas.csv'), inedx=False)
 
         # store the tree to json file
         self.log('Storing the tree to json file...', level='PROGRESS')

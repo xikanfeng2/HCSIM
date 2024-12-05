@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="HCSIM",
-    version="1.0.9",
+    version="1.1.0",
     author="Xikang Feng",
     author_email="fxk@nwpu.edu.cn",
     maintainer="Sisi Peng",
