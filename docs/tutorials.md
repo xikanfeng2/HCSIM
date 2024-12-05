@@ -19,6 +19,8 @@
 <a name="overview"></a>
 ## Overview
 
+![HCSIM Workflow](images/hcsim-workflow.jpg)
+
 <a name="implement"></a>
 ### Implementation
 

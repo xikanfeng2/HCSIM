@@ -1,6 +1,9 @@
 ```{include} ../README.md
 ```
 
+![HCSIM Workflow](images/hcsim-workflow.jpg)
+
+
 ```{note}
 This project is under active development.
 ```
