@@ -602,6 +602,9 @@ class HCSIM:
                     paternal_genome[chrom] += line
         
         # add nromal clone to cnv matrix
+        root.maternal_cnvs = []
+        root.paternal_cnvs = []
+        root.changes = []
         for i in range(ref.shape[0]):
             root.maternal_cnvs.append(1)
             root.paternal_cnvs.append(1)
@@ -613,12 +616,15 @@ class HCSIM:
 
         while  queue:
             clone = queue.popleft()
+            clone.maternal_cnvs = []
+            clone.paternal_cnvs = []
+            clone.changes = []
+
             if clone.depth == 1: # children of normal clone
                 mirrored_cnv_flag = False
 
                 wgd_chroms = []
                 wcl_chroms = []
-                
                 # select WGD and WCL chromosomes
                 random_chroms = random.sample(all_chroms, self.wgd_cna_no+self.wcl_cna_no)
                 wgd_chroms = random_chroms[:self.wgd_cna_no]
