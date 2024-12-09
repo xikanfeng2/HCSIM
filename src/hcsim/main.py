@@ -1403,11 +1403,10 @@ class HCSIM:
         bam_file = os.path.join(dcell, cell + ".bam")
         sorted_bam_file = os.path.join(dcell, cell + ".sorted.bam")
         dedup_bam_file = os.path.join(dcell, cell + ".sorted.dedup.bam")
-        dedup_metrics_file = os.path.join(dcell, cell + ".sorted.dedup.metrics.txt")
         rg_dedup_bam_file = os.path.join(dcell, cell + ".sorted.dedup.rg.bam")
         samtools_log = os.path.join(dlog, 'samtools_log.txt')
         # picard_log = os.path.join(dlog, 'picard_log.txt')
-        tmp_files = [bam_file, sorted_bam_file, dedup_bam_file, dedup_metrics_file]
+        tmp_files = [bam_file, sorted_bam_file, dedup_bam_file]
 
         # pbam_bar.progress(advance=False, msg="Picard SortSam for {}".format(cell))
         # command = """java -Xmx40G -Djava.io.tmpdir={3} -XX:ParallelGCThreads={4} -jar {0} SortSam \
