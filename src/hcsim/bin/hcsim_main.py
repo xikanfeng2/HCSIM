@@ -65,7 +65,7 @@ def add_executable_arguments(parser):
     parser.add_argument('--wgsim', type=str, required=False, default='wgsim', metavar="", help='Path to the executable \"wgsim\" fileexecutable (default: in $PATH)')
     parser.add_argument('--bwa', type=str, required=False, default='bwa', metavar="", help='Path to the executable \"bwa\" file (default: in $PATH)')
     parser.add_argument('--samtools', type=str, required=False, default='samtools', metavar="", help='Path to the executable \"samtools\" file (default: in $PATH)')
-    parser.add_argument('--picard', type=str, required=False, default='picard.jar', metavar="", help='Path to the \"picard.jar\" file (default: ./picard.jar)')
+    # parser.add_argument('--picard', type=str, required=False, default='picard.jar', metavar="", help='Path to the \"picard.jar\" file (default: ./picard.jar)')
 
 def add_gprofile_arguments(parser):
     # CNA Profile
@@ -170,7 +170,7 @@ def main():
     add_shared_arguments(pbam_parser)
     add_pbam_arguments(pbam_parser)
     pbam_parser.add_argument('--samtools', type=str, required=False, default='samtools', metavar="", help='Path to the executable \"samtools\" file (default: in $PATH)')
-    pbam_parser.add_argument('--picard', type=str, required=False, default='picard.jar', metavar="", help='Path to the \"picard.jar\" file (default: in ./)')
+    # pbam_parser.add_argument('--picard', type=str, required=False, default='picard.jar', metavar="", help='Path to the \"picard.jar\" file (default: in ./)')
     pbam_parser.set_defaults(func=process_cell_bam)
 
     # bcbam subcommand

@@ -64,7 +64,7 @@ class HCSIM:
                 wgsim: str = 'wgsim', 
                 samtools: str = 'samtools', 
                 bwa: str = 'bwa', 
-                picard: str = 'picard.jar',
+                # picard: str = 'picard.jar',
                 bcftools: str = 'bcftools'):
         # binding each param to self
         params = locals()
@@ -146,9 +146,9 @@ class HCSIM:
         wgsim_log = os.path.join(dlog, 'wgsim_log.txt')
         bwa_log = os.path.join(dlog, 'bwa_log.txt')
         samtools_log = os.path.join(dlog, 'samtools_log.txt')
-        picard_log = os.path.join(dlog, 'picard_log.txt')
+        # picard_log = os.path.join(dlog, 'picard_log.txt')
         barcode_bam_log = os.path.join(dlog, 'barcode_bam_log.txt')
-        for log_file in [hcsim_log, wgsim_log, bwa_log, samtools_log, picard_log, barcode_bam_log]:
+        for log_file in [hcsim_log, wgsim_log, bwa_log, samtools_log, barcode_bam_log]:
             if not os.path.isfile(log_file):
                 os.system('touch {}'.format(log_file))
 
@@ -1406,43 +1406,65 @@ class HCSIM:
         dedup_metrics_file = os.path.join(dcell, cell + ".sorted.dedup.metrics.txt")
         rg_dedup_bam_file = os.path.join(dcell, cell + ".sorted.dedup.rg.bam")
         samtools_log = os.path.join(dlog, 'samtools_log.txt')
-        picard_log = os.path.join(dlog, 'picard_log.txt')
+        # picard_log = os.path.join(dlog, 'picard_log.txt')
         tmp_files = [bam_file, sorted_bam_file, dedup_bam_file, dedup_metrics_file]
 
-        pbam_bar.progress(advance=False, msg="Picard SortSam for {}".format(cell))
-        command = """java -Xmx40G -Djava.io.tmpdir={3} -XX:ParallelGCThreads={4} -jar {0} SortSam \
-                    INPUT={1} OUTPUT={2} \
-                    SORT_ORDER=coordinate TMP_DIR={3}""".format(self.picard, bam_file, sorted_bam_file, dtmp, self.thread)
-        utils.runcmd(command, picard_log)
+        # pbam_bar.progress(advance=False, msg="Picard SortSam for {}".format(cell))
+        # command = """java -Xmx40G -Djava.io.tmpdir={3} -XX:ParallelGCThreads={4} -jar {0} SortSam \
+        #             INPUT={1} OUTPUT={2} \
+        #             SORT_ORDER=coordinate TMP_DIR={3}""".format(self.picard, bam_file, sorted_bam_file, dtmp, self.thread)
+        # utils.runcmd(command, picard_log)
 
-        #run samtools build index
-        pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
-        command = "{0} index {1}".format(self.samtools, sorted_bam_file)
-        tmp_files.append(sorted_bam_file + '.bai')
+        # run samtools sort bam
+        pbam_bar.progress(advance=False, msg="Samtools sort for {}".format(cell))
+        command = '{0} sort -@ {1} -o {2} {3}'.format(self.samtools, self.thread, sorted_bam_file, bam_file)
         utils.runcmd(command, samtools_log)
 
+        # #run samtools build index
+        # pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
+        # command = "{0} index {1}".format(self.samtools, sorted_bam_file)
+        # tmp_files.append(sorted_bam_file + '.bai')
+        # utils.runcmd(command, samtools_log)
+
         # run picard dedup
-        pbam_bar.progress(advance=False, msg="Picard MarkDuplicates for {}".format(cell))
-        command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} MarkDuplicates \
-                    REMOVE_DUPLICATES=true \
-                    I={1} O={2} \
-                    METRICS_FILE={3} \
-                    PROGRAM_RECORD_ID=MarkDuplicates PROGRAM_GROUP_VERSION=null \
-                    PROGRAM_GROUP_NAME=MarkDuplicates TMP_DIR={4}""".format(self.picard, sorted_bam_file, dedup_bam_file, dedup_metrics_file, dtmp, self.thread)
-        utils.runcmd(command, picard_log)
+        # pbam_bar.progress(advance=False, msg="Picard MarkDuplicates for {}".format(cell))
+        # command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} MarkDuplicates \
+        #             REMOVE_DUPLICATES=true \
+        #             I={1} O={2} \
+        #             METRICS_FILE={3} \
+        #             PROGRAM_RECORD_ID=MarkDuplicates PROGRAM_GROUP_VERSION=null \
+        #             PROGRAM_GROUP_NAME=MarkDuplicates TMP_DIR={4}""".format(self.picard, sorted_bam_file, dedup_bam_file, dedup_metrics_file, dtmp, self.thread)
+        # utils.runcmd(command, picard_log)
+
+        # run samtools remove dupliations
+        pbam_bar.progress(advance=False, msg="Samtools markdup for {}".format(cell))
+        command = '{0} markdup -@ {1} -r {2} {3}'.format(self.samtools, self.thread, sorted_bam_file, dedup_bam_file)
+        utils.runcmd(command, samtools_log)
 
         # run picard add read group
-        pbam_bar.progress(advance=False, msg="Picard AddOrReplaceReadGroups for {}".format(cell))
-        command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} AddOrReplaceReadGroups \
-                    INPUT={1} OUTPUT={2} \
-                    RGID={3} \
-                    RGLB=genome \
-                    RGPL=ILLUMINA \
-                    RGPU=machine \
-                    RGSM={3} TMP_DIR={4}""".format(self.picard, dedup_bam_file, rg_dedup_bam_file, cell, dtmp, self.thread)
-        utils.runcmd(command, picard_log)
+        # pbam_bar.progress(advance=False, msg="Picard AddOrReplaceReadGroups for {}".format(cell))
+        # command = """java -Xmx40G -Djava.io.tmpdir={4} -XX:ParallelGCThreads={5} -jar {0} AddOrReplaceReadGroups \
+        #             INPUT={1} OUTPUT={2} \
+        #             RGID={3} \
+        #             RGLB=genome \
+        #             RGPL=ILLUMINA \
+        #             RGPU=machine \
+        #             RGSM={3} TMP_DIR={4}""".format(self.picard, dedup_bam_file, rg_dedup_bam_file, cell, dtmp, self.thread)
+        # utils.runcmd(command, picard_log)
 
-        pbam_bar.progress(advance=False, msg="Samtools build index for {}".format(cell))
+        # run samtools add reads group
+        pbam_bar.progress(advance=False, msg="Samtools addreplacerg for {}".format(cell))
+        command = """{0} addreplacerg -@ {1} \
+                    -r ID:{2} \
+                    -r LB:genome \
+                    -r PL:ILLUMINA \
+                    -r PU:HCSIM \
+                    -r SM:{2} \
+                    -o {3} \
+                    {4}""".format(self.samtools, self.thread, cell, rg_dedup_bam_file, dedup_bam_file)
+        utils.runcmd(command, samtools_log)
+
+        pbam_bar.progress(advance=False, msg="Samtools index for {}".format(cell))
         command = "{0} index {1}".format(self.samtools, rg_dedup_bam_file)
         utils.runcmd(command, samtools_log)
 
