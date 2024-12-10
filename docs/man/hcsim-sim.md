@@ -43,5 +43,4 @@ options:
   --wgsim               Path to the executable "wgsim" fileexecutable (default: in $PATH)
   --bwa                 Path to the executable "bwa" file (default: in $PATH)
   --samtools            Path to the executable "samtools" file (default: in $PATH)
-  --picard              Path to the "picard.jar" file (default: ./picard.jar)
 ```

@@ -16,5 +16,4 @@ options:
   -eno , --cell-no    The total cell number for this simultion dataset (deafult: 5)
   -t , --thread       Number of parallele jobs to use (default: equal to number of available processors)
   --samtools          Path to the executable "samtools" file (default: in $PATH)
-  --picard            Path to the "picard.jar" file (default: in ./)
 ```
