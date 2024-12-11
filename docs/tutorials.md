@@ -323,4 +323,4 @@ This folder contains all log files for all HCSIM steps.
 
 This folder contains all temporary files for all HCSIM steps.
 
-[Github]: https://github.com/xikanfeng2/HCSIM/datasets/hcCNA-bench-large/profile
+[Github]: https://github.com/xikanfeng2/HCSIM/tree/main/datasets/hcCNA-bench-large/profile
