@@ -106,8 +106,8 @@ HCSIM also requires few standard additional tools, which should be included in `
 
 | Software | Tested version | Comments |
 |----------|----------------|----------|
-| [wgsim](https://github.com/lh3/wgsim) | 0.3.2 | Wgsim is a small tool for simulating sequence reads from a reference genome. |
-| [SAMtools and BCFtools](http://www.htslib.org/doc/)  | 1.3.1 | Suite of programs for interacting with high-throughput sequencing data. |
+| [wgsim](https://github.com/lh3/wgsim) | 1.13 | Wgsim is a small tool for simulating sequence reads from a reference genome. |
+| [SAMtools and BCFtools](http://www.htslib.org/doc/)  | 1.13 | Suite of programs for interacting with high-throughput sequencing data. |
 | [bwa](http://bio-bwa.sourceforge.net/)  | 0.7.17-r1188 | Alignment of DNA sequencing reads. |
 
 <a name="usage"></a>
