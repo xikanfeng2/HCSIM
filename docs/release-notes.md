@@ -8,7 +8,7 @@ HCSIM is released!
 
 ## Version 1.1.0
 
-### 1.1.4 <sup><sub>`2024-12-10`</sub></sup>
+### 1.1.0 <sup><sub>`2024-12-10`</sub></sup>
 
 Bug fixed and command-line support added.
 
