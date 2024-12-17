@@ -5,3 +5,15 @@
 ### 1.0.0 <sup><sub>`2024-11-28`</sub></sup>
 
 HCSIM is released!
+
+## Version 1.1.0
+
+### 1.1.4 <sup><sub>`2024-12-10`</sub></sup>
+
+Bug fixed and command-line support added.
+
+## Version 1.2.0
+
+### 1.2.0 <sup><sub>`2024-12-17`</sub></sup>
+
+Benchmark utilities and the `hcbench` command have been added!

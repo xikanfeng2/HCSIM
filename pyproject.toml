@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "HCSIM"
-version = "1.1.7"
+version = "1.2.0"
 dependencies = [
   "pandas",
   "numpy>=1.16.1,<1.25",
   "matplotlib>=3.0.2",
   "networkx>=3.2.1",
   "scikit-learn",
+  "biopython",
 ]
 requires-python = ">=3.6"
 authors = [

@@ -15,6 +15,8 @@
     - [Commands](#hcsim-commands)
     - [Class](#hcsim-class)
     - [Outputs](#outputs)
+4. [Benchmark utilities](#bench)
+    - [Commands](#hcbench-commands)
 
 <a name="overview"></a>
 ## Overview
@@ -159,8 +161,8 @@ Click on the name of each command to obtain a description of all the available p
 | [gfastq](man/hcsim-gfastq.md) | Generating clone FASTQ file | One or more running directories of previous runs of `gfasta` |
 | [align](man/hcsim-align.md) | Aligning clone FASTQ file | One or more running directories of previous runs of `gfastq` |
 | [downsam](man/hcsim-downsam.md) | Downsampling clone BAM | One or more running directories of previous runs of `align` |
-| [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of `downsam` | [Final outputs](doc/chisel-calling.md) |
-| [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of `bcbam` | [Final outputs](doc/chisel-cloning.md) |
+| [pbam](man/hcsim-pbam.md) | Processing cell BAMs | One or more running directories of previous runs of `downsam` |
+| [bcbam](man/hcsim-bcbam.md) | Generating barcode BAM file | One or more running directories of previous runs of `bcbam` |
 
 <a name="hcsim-class"></a>
 ### HCSIM Class
@@ -322,5 +324,28 @@ This folder contains all log files for all HCSIM steps.
 #### `tmp` folder
 
 This folder contains all temporary files for all HCSIM steps.
+
+<a name="bench"></a>
+## Benchmark utilities
+
+<a name="hcbench-commands"></a>
+### `hcbench` Commands
+
+HCSIM benchmark utilities provides a series of scripts designed to evaluate the performance of tools in Copy Number Variation (CNV) detection and clustering tasks. These scripts implement various subcommands, each tailored to analyze specific aspects of CNV accuracy and evolutionary relationships. The outputs include well-defined performance metrics such as Adjusted Mutual Information (AMI), Adjusted Rand Index (ARI), Root Mean Squared Error (RMSE), Accuracy (ACC), Spearman Correlation Coefficient (SCC), and evolutionary CN stability metrics. Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcbench subdetect`.
+
+```{note}
+Click on the name of each command to obtain a description of all the available parameters.
+```
+
+| SubCommand | Description |
+|--------------|-------------|
+| [subdetect](man/hcbench-subdetect.md) | Calculate AMI (Adjusted Mutual Information) and ARI (Adjusted Rand Index). |
+| [cnaccuracy](man/hcbench-cnaccuracy.md) | Calculate the RMSE,ACC,SCC of CN status at the bin level. |
+| [hcidentify](man/hcbench-hcidentify.md) | Identify whether CNA events are correctly detected at their first branch of evolution, using ACC. |
+| [hcparent](man/hcbench-hcparent.md) | Identify whether the parent CN is correctly inferred using RMSE abd ACC. |
+| [hcCNchange](man/hcbench-hcCNchange.md) | Identify if the CN change from parent to child is correctly identified, using RMSE and ACC. |
+| [cnretain](man/hcbench-cnretain.md) | Calculate the ACC of Evolutionary CN Stability. |
+| [mirrorsubclone](man/hcbench-mirrorsubclone.md) | Calculate the RMSE,ACC of Mirror-subclone CNA. |
+| [cnstates](man/hcbench-cnstates.md) | Calculate CN state detection metrics at the bin level. |
 
 [Github]: https://github.com/xikanfeng2/HCSIM/tree/main/datasets/hcCNA-bench-large/profile

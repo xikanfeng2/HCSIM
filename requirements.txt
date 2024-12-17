@@ -3,3 +3,4 @@ numpy>=1.16.1,<1.25
 matplotlib>=3.0.2
 networkx>=3.2.1
 scikit-learn
+biopython

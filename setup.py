@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="HCSIM",
-    version="1.1.7",
+    version="1.2.0",
     author="Xikang Feng",
     author_email="fxk@nwpu.edu.cn",
     maintainer="Sisi Peng",
@@ -40,6 +40,7 @@ setuptools.setup(
         'matplotlib>=3.0.2',
         'networkx>=3.2.1',
         'scikit-learn',
+        'biopython',
     ],
     entry_points={
         'console_scripts': [
