@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="HCSIM",
-    version="1.1.5",
+    version="1.1.6",
     author="Xikang Feng",
     author_email="fxk@nwpu.edu.cn",
     maintainer="Sisi Peng",
@@ -39,10 +39,12 @@ setuptools.setup(
         'numpy>=1.16.1,<1.25',
         'matplotlib>=3.0.2',
         'networkx>=3.2.1',
+        'scikit-learn',
     ],
     entry_points={
         'console_scripts': [
             'hcsim=hcsim.bin.hcsim_main:main',
+            'hcbench=hcsim.bin.hcbench_main:main'
         ],
     },
 )
