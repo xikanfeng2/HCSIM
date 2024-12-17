@@ -331,7 +331,7 @@ This folder contains all temporary files for all HCSIM steps.
 <a name="hcbench-commands"></a>
 ### `hcbench` Commands
 
-HCSIM benchmark utilities provides a series of scripts designed to evaluate the performance of tools in Copy Number Variation (CNV) detection and clustering tasks. These scripts implement various subcommands, each tailored to analyze specific aspects of CNV accuracy and evolutionary relationships. The outputs include well-defined performance metrics such as Adjusted Mutual Information (AMI), Adjusted Rand Index (ARI), Root Mean Squared Error (RMSE), Accuracy (ACC), Spearman Correlation Coefficient (SCC), and evolutionary CN stability metrics. Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcbench subdetect`.
+HCSIM benchmark utilities provides a series of scripts designed to evaluate the performance of tools in Copy Number Variation (CNV) detection and clustering tasks. These scripts implement various subcommands, each tailored to analyze specific aspects of CNV accuracy and evolutionary relationships. The outputs include well-defined performance metrics such as Adjusted Mutual Information (AMI), Adjusted Rand Index (ARI), Root Mean Squared Error (RMSE), Accuracy (ACC), Spearman Correlation Coefficient (SCC), and evolutionary CN stability metrics. Every sub-command can be run directly when HCSIM has been correctly installed, such as `hcbench subdetect`. You can check the example data for `hcbench` at [Benchmark] folder.
 
 ```{note}
 Click on the name of each command to obtain a description of all the available parameters.
@@ -349,3 +349,4 @@ Click on the name of each command to obtain a description of all the available p
 | [cnstates](man/hcbench-cnstates.md) | Calculate CN state detection metrics at the bin level. |
 
 [Github]: https://github.com/xikanfeng2/HCSIM/tree/main/datasets/hcCNA-bench-large/profile
+[Benchmark]: https://github.com/xikanfeng2/HCSIM/tree/main/datasets/hcbench-example-data/
