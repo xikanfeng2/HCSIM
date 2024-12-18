@@ -46,9 +46,9 @@ options:
 ## Example Usage
 
 ```shell
-hcbench cnretain 
- --tool-maternal-cna-files data/chisel_5x_maternal_cnv.csv 
- --tool-paternal-cna-files data/chisel_5x_paternal_cnv.csv 
- --tool-names chisel_5x --changes-file profile/changes.csv 
+hcbench cnretain \
+ --tool-maternal-cna-files data/chisel_5x_maternal_cnv.csv \
+ --tool-paternal-cna-files data/chisel_5x_paternal_cnv.csv \
+ --tool-names chisel_5x --changes-file profile/changes.csv \
  --tree-file profile/tree.newick
 ```

@@ -51,5 +51,5 @@ hcbench hcidentify \
    --tool-maternal-cna-files maternal_tool1.csv maternal_tool2.csv \
    --tool-paternal-cna-files paternal_tool1.csv paternal_tool2.csv \
    --tool-names Tool1 Tool2 \
-   --tree-file tree.nwk \
+   --tree-file tree.nwk 
 ```

@@ -100,7 +100,10 @@ HCSIM depends on the following standard python packages, which must be available
 | [numpy](https://numpy.org/) | 2.1.0 | Efficient scientific computations |
 | [pandas](https://pandas.pydata.org/) | 2.2.2 | Dataframe management |
 | [matplotlib](https://matplotlib.org/) | 3.9.1 | Basic plotting utilities |
-| [networkx](https://networkx.org) | 3.3 | Drawing cell-lineage tree
+| [networkx](https://networkx.org) | 3.3 | Drawing cell-lineage tree |
+| [scikit-learn](https://scikit-learn.org) | 1.3.0 | Benchmark utilities |
+| [biopython](https://networkx.org) | 1.84 | Processing cell-lineage tree |
+
 
 #### > Additional software
 

@@ -48,9 +48,9 @@ options:
 ## Example Usage
 
 ```shell
-hcbench hcCNchange /
- --tool-maternal-cna-files data/chisel_5x_maternal_cnv.csv /
- --tool-paternal-cna-files data/chisel_5x_paternal_cnv.csv /
- --tool-names chisel_5x /                                                                                                        --changes-file profile/changes.csv /
-
+hcbench hcCNchange \
+ --tool-maternal-cna-files data/chisel_5x_maternal_cnv.csv \
+ --tool-paternal-cna-files data/chisel_5x_paternal_cnv.csv \
+ --tool-names chisel_5x \                                                                                                        
+ --changes-file profile/changes.csv 
 ```

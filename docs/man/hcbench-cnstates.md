@@ -58,7 +58,7 @@ hcbench cnstates \
   --tool-paternal-cna-files data/chisel_5x_paternal_cnv.csv \
   --tool-name chisel_5x \
   --profile-maternal-cna-files data/ground_truth_maternal_cnv.csv \
-  --profile-paternal-cna-files data/ground_truth_paternal_cnv.csv\
+  --profile-paternal-cna-files data/ground_truth_paternal_cnv.csv
 ```
 
 This command processes the specified input files, evaluates the CN state detection metrics for each tool, and saves the results in the `./output` directory.

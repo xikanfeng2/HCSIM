@@ -223,7 +223,6 @@ def run(args):
     tree = Phylo.read(args.tree_file, "newick")
     change_data = pd.read_csv(args.changes_file)
     change_data = add_check_list(tree,change_data)
-    print(change_data.head(),"----")
 
     results = []
     for tool_maternal_path,tool_paternal_path, tool_name in zip(args.tool_maternal_cna_files, args.tool_paternal_cna_files,args.tool_names):

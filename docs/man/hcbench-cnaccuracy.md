@@ -45,8 +45,8 @@ options:
 ## Example Usage
 
 ```shell
-hcbench cnaccuracy 
-   --tool-cna-files data/chisel_2x_500kb_combined_cnv.csv data/chisel_5x_500kb_combined_cnv.csv 
-   --cna-profile-file data/profile_combined_cnv_500kb.csv 
+hcbench cnaccuracy \
+   --tool-cna-files data/chisel_2x_500kb_combined_cnv.csv data/chisel_5x_500kb_combined_cnv.csv \
+   --cna-profile-file data/profile_combined_cnv_500kb.csv \
    --tool-names chisel_2x chisel_5x
 ```
