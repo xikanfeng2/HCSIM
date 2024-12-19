@@ -7,7 +7,7 @@
 
 HCSIM: A Single-Cell Genomics Simulator with Haplotype-Specific Copy Number Annotation. Read the full [documentation] here.
 
-![HCSIM Workflow](docs/images/hcsim-workflow.jpg)
+![HCSIM Workflow](docs/images/HCSIM_Figure1.png)
 
 <!-- ## Citation
 

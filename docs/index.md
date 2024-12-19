@@ -11,7 +11,7 @@ This project is under active development.
 
 HCSIM: A Single-Cell Genomics Simulator with Haplotype-Specific Copy Number Annotation.
 
-![HCSIM Workflow](images/hcsim-workflow.jpg)
+![HCSIM Workflow](images/HCSIM_Figure1.png)
 
 * Discuss development on [Github].
 * Get started by browsing {doc}`tutorials <tutorials>`.
