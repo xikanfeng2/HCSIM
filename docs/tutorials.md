@@ -21,7 +21,7 @@
 <a name="overview"></a>
 ## Overview
 
-![HCSIM Workflow](images/hcsim-workflow.jpg)
+![HCSIM Workflow](images/HCSIM_Figure1.png)
 
 <a name="implement"></a>
 ### Implementation
