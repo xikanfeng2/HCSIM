@@ -256,7 +256,7 @@ class HCSIM:
         utils.check_positive(barcode_len=self.barcode_len)
 
     def set_params(self, **params):
-        """Set the parameters of SCSilicon2.
+        """Set the parameters of HCSIM.
 
         Any parameters not given as named arguments will be left at their
         current value.
