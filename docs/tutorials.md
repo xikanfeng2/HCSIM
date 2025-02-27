@@ -3,8 +3,6 @@
 ## Contents ##
 
 1. [Overview](#overview)
-    - [Implementation](#implement)
-    - [CNA Types](#cna-types)
 2. [Installation](#setup)
     - [Creation of python virtual env](#env)
     - [Standard installation](#standard)
@@ -23,14 +21,7 @@
 
 ![HCSIM Workflow](images/HCSIM_Figure1.png)
 
-<a name="implement"></a>
-### Implementation
-
-
-<a name="cna-types"></a>
-### CNA Types
-
-**HCSIM** have provided **nine types of hcCNAs**. The two basic hcCNA types are **deletion (DEL)**, indicating CN loss, and **duplication (DUP)**, indicating CN gain. Next, HCSIM summarizes complex hcCNA associated with **loss of heterozygosity (LOH)** with three types. LOH means the loss of one parental allele in a region, which removes genetic diversity. 1) **LOH with copy mumber loss (CNL-LOH)** means the remaining allele reduces the copy number below two, i.e. 1m0. 2) **CN-neutral LOH (CNN-LOH)** refers to a genetic state where one allele has a copy number of two, while the other allele has zero copies, resulting in a normal total copy number but the loss of heterozygosity, i.e., 2m0. 3) **CN-gain LOH (CNG-LOH)** refers to the remaning allele has a copy number larger than two, e.g., 3m0, 4m0. Besides, we have the **whole chromosome loss (WCL)**, the complete loss of an entire chromosome, resulting in substantial genetic material loss, which can drive tumor progression by affecting many genes at once. We summarize the complex hcCNA associated with CN gain with two types. 1) **Gain of heterozygosity (GOH)** is an increase in the number of different alleles due to extra copies, potentially facilitating adaptation by introducing new mutations. 2) **Whole genome doubling (WGD)** is a process where the entire genome is duplicated, leading to an overall increase in copy number that promotes further chromosomal instability. Lastly, we have complex hcCNA related to haplotype status, **mirror CNAs** involve reciprocal changes in copy numbers between homologous chromosomes, e.g., the copy numbers of two genomic regions (A and B) being CN(A)=1 and CN(B)=2 in one haplotype, while in another haplotype, the copy numbers of those two bins are reversed, with CN(A)=2 and CN(B)=1.
+HCSIM models ten distinct complex hcCNA events, which are classified into three categories based on their genomic impact: copy-number (CN) loss, CN gain, and mirror-like reciprocal events (above figure). CN-loss-associated events include deletions (DEL; i.e., 0|0), where both alleles are lost. Loss of heterozygosity (LOH), defined as the loss of one parental allele, can occur in three distinct forms: LOH with copy number loss (CNL-LOH), where the remaining allele has a copy number of one (i.e., 1|0); copy-number neutral LOH (CNN-LOH), where one allele is lost while the other remains with a copy number of two (i.e., 2|0), preserving a normal total copy number but still exhibiting LOH; and copy-number gain LOH (CNG-LOH), where the remaining allele has a copy number above two (e.g., 3|0, 4|0). Whole-chromosome loss (WCL) results in the complete loss of a chromosome, affecting multiple loci simultaneously.CN gain-related hcCNAs primarily fall into three categories: duplication (DUP) is the most common form of CN gain, where a genomic region is duplicated; gain of heterozygosity (GOH), an increase in different alleles due to extra copies, potentially facilitating adaptation by introducing new mutations; and whole genome doubling (WGD), where the entire genome is duplicated, promoting chromosomal instability and tumor evolution by affecting multiple loci simultaneously.Additionally, mirror-like hcCNAs involve reciprocal CN swaps, either across loci (mirror-CNAs) or across subclones (Mirror-Subclone-CNAs). An example of mirror-CNA is two genomic bins (A and B) may have CN(A)=1 and CN(B)=2 in one haplotype, while in the other haplotype, the copy numbers are reversed, with CN(A)=2 and CN(B)=1. Similarly, in Mirror-Subclone-CNAs, two tumor subclones (c1 and c2), the copy numbers of a genomic region may be CN(c1)=1 and CN(c2)=3 in one haplotype, while in the other haplotype, the values are reversed, with CN(c1)=3 and CN(c2)=1. These events collectively capture the diverse genetic alterations driving tumor evolution.
 
 <a name="setup"></a>
 ## Installation
