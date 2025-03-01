@@ -17,3 +17,9 @@ Bug fixed and command-line support added.
 ### 1.2.0 <sup><sub>`2024-12-17`</sub></sup>
 
 Benchmark utilities and the `hcbench` command have been added!
+
+## Version 1.3.0
+
+### 1.3.0 <sup><sub>`2025-03-01`</sub></sup>
+
+`rdr` and `baf` subcommands have been added!
