@@ -508,7 +508,7 @@ def merge_coverage_files(coverage_files):
         cell_name = os.path.basename(cov_file).split(".")[0]
         
         df = pd.read_csv(cov_file, sep="\t", header=None, names=["chr", "start", "end", "coverage"])
-        
+        df["start"] =  df["start"] + 1
         df["bin"] = df["chr"] + ":" + df["start"].astype(str) + "-" + df["end"].astype(str)
         
         df = df[["bin", "coverage"]].set_index("bin")
