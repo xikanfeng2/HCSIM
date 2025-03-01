@@ -1,9 +1,9 @@
-# hcsim pbam
+# hcsim baf
 
-`hcsim pbam` command to process cell bams, including sort, markduplications and add reads group, using `samtools` tools.
+`hcsim baf` command to compute BAFs with `bcftools` and `bedtools`.
 
 ```shell
-usage: hcsim pbam [-h] [-r] [-o] [-g] [-b] [-cno] [-eno] [-t] [--samtools]
+usage: hcsim baf [-h] [-r] [-o] [-g] [-b] [-cno] [-eno] [-t] [--bcftools] [--bedtools]
 
 options:
   -h, --help          show this help message and exit
@@ -15,5 +15,6 @@ options:
   -cno , --clone-no   The random clone number contained in evolution tree, including normal clone (default: 3)
   -eno , --cell-no    The total cell number for this simultion dataset (deafult: 5)
   -t , --thread       Number of parallele jobs to use (default: equal to number of available processors)
-  --samtools          Path to the executable "samtools" file (default: in $PATH)
+  --bcftools          Path to the executable "bcftools" file (default: in $PATH)
+  --bedtools          Path to the executable "bedtools" file (default: in $PATH)
 ```
