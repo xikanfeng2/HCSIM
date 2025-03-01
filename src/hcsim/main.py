@@ -1889,7 +1889,11 @@ class HCSIM:
         # handle phased snps
         allele_phase_file = os.path.join(dprofile, 'snp_phases.csv')
         phased_snps = utils.read_phase(allele_phase_file)
-    
+
+        # generate bed file for bcftools with filtered phased snps
+        filtered_snp_bed = os.path.join(dtmp, 'filtered_snps.bed')
+        utils.write_snp_bed_file(filtered_snp_bed, phased_snps)
+
         # load cell list from barcode file
         cell_list = []
         barcode_file = os.path.join(dprofile, 'barcodes.txt')
