@@ -36,6 +36,14 @@ def init_pbam(lock, counter, l):
     global pbam_bar
     pbam_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
 
+def init_bcftools(lock, counter, l):
+    global bcftools_bar
+    bcftools_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
+def init_cov(lock, counter, l):
+    global cov_bar
+    cov_bar = ProgressBar(lock=lock, counter=counter, total=l, length=40, verbose=False)
+
 class HCSIM:
     def __init__(self, 
                 ref_genome: str, 
@@ -64,7 +72,7 @@ class HCSIM:
                 wgsim: str = 'wgsim', 
                 samtools: str = 'samtools', 
                 bwa: str = 'bwa', 
-                # picard: str = 'picard.jar',
+                bedtools: str = 'bedtools',
                 bcftools: str = 'bcftools'):
         # binding each param to self
         params = locals()
@@ -106,7 +114,7 @@ class HCSIM:
 
     def setup_dir(self):
         outdir = self.outdir
-        if any(os.path.isdir(os.path.join(outdir, x)) for x in ['profile', 'fasta', 'fastq', 'clone_bams', 'cell_bams', 'barcode_bam', 'tmp', 'log']):
+        if any(os.path.isdir(os.path.join(outdir, x)) for x in ['profile', 'fasta', 'fastq', 'clone_bams', 'cell_bams', 'barcode_bam', 'rdr', 'baf', 'tmp', 'log']):
             self.log('Some of the working folders already exist in the running directory and content will be overwritten, please interrupt the process if this was not intended.', level='WARN')
 
         dprofile = os.path.join(outdir, 'profile')
@@ -133,6 +141,14 @@ class HCSIM:
         if not os.path.isdir(dbarcode):
             os.mkdir(dbarcode)
 
+        drdr = os.path.join(outdir, 'rdr')
+        if not os.path.isdir(drdr):
+            os.mkdir(drdr)
+        
+        dbaf = os.path.join(outdir, 'baf')
+        if not os.path.isdir(dbaf):
+            os.mkdir(dbaf)
+
         dtmp = os.path.join(outdir, 'tmp')
         if not os.path.isdir(dtmp):
             os.mkdir(dtmp)
@@ -146,13 +162,14 @@ class HCSIM:
         wgsim_log = os.path.join(dlog, 'wgsim_log.txt')
         bwa_log = os.path.join(dlog, 'bwa_log.txt')
         samtools_log = os.path.join(dlog, 'samtools_log.txt')
-        # picard_log = os.path.join(dlog, 'picard_log.txt')
         barcode_bam_log = os.path.join(dlog, 'barcode_bam_log.txt')
-        for log_file in [hcsim_log, wgsim_log, bwa_log, samtools_log, barcode_bam_log]:
+        bedtools_log = os.path.join(dlog, 'bedtools_log.txt')
+        bcftools_log = os.path.join(dlog, 'bcftools_log.txt')
+        for log_file in [hcsim_log, wgsim_log, bwa_log, samtools_log, barcode_bam_log, bedtools_log, bcftools_log]:
             if not os.path.isfile(log_file):
                 os.system('touch {}'.format(log_file))
 
-        return dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog
+        return dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog
     
     def log(self, msg, level='STEP', lock=None):
         """
@@ -1452,10 +1469,59 @@ class HCSIM:
         os.rename(dedup_bam_file, bam_file)
         os.rename(dedup_bam_file + '.bai', bam_file + '.bai')
         pbam_bar.progress(advance=True, msg="Finish cell bam processing for {}".format(cell))
+
+    def _call_bedtools(self, cell_bam, ref_bed, coverage_file):
+        bedtools_log = os.path.join(self.outdir, 'log/bedtools_log.txt')
+        samtools_log = os.path.join(self.outdir, 'log/samtools_log.txt')
+        # check bai file
+        if not os.path.exists(cell_bam + '.bai'):
+            cmd = f"{self.samtools} index -@ {self.thread} {cell_bam}"
+            utils.runcmd(cmd, samtools_log)
+
+        # use bedtools to get coverage
+        cmd = f"{self.bedtools} multicov -bams {cell_bam} -bed {ref_bed} -q 60 > {coverage_file}"
+        utils.runcmd(cmd, bedtools_log)
+
+    def _get_coverage_for_each_cell(self, job):
+        (cell, dcell, dtmp, dlog) = job
+
+        cell_bam = os.path.join(dcell, cell + '.bam')
+        coverage_file = os.path.join(dtmp, cell + '.coverage.bed')
+        ref_bed = os.path.join(dtmp, 'rdr_reference.bed')
+
+        # use bedtools to get coverage for each cell bam
+        cov_bar.progress(advance=False, msg="Counting germinal SNPs on {}".format(cell))
+        self._call_bedtools(cell_bam, ref_bed, coverage_file)
+        cov_bar.progress(advance=True, msg="Finish germinal SNPs on {}".format(cell))
+
+    def _call_bcftools(self, snps_bed_file, bam_file, vcf_file, count_file):
+        bcftools_log = os.path.join(self.outdir, 'log/bcftools_log.txt')
+
+        # bcftools mpileup vcf file
+        cmd = f"{self.bcftools} mpileup -f {self.ref_genome} -R {snps_bed_file} --skip-indels -a INFO/AD -Ou {bam_file} | bcftools view -Oz -o {vcf_file}"        
+        utils.runcmd(cmd, bcftools_log)
+        # bcftools index vcf file
+        cmd = f"{self.bcftools} index {vcf_file}"
+        utils.runcmd(cmd, bcftools_log)
+        #bcftools query
+        cmd = f"{self.bcftools} query -f '%CHROM\t%POS\t%REF\t%ALT\t[%AD]\n' {vcf_file} > {count_file}"
+        utils.runcmd(cmd, bcftools_log)
     
+    def _call_bcftools_for_each_cell(self, job):
+        (cell, dcell, dtmp, dlog) = job
+
+        cell_bam = os.path.join(dcell, cell + '.bam')
+        snp_bed = os.path.join(dtmp, 'filtered_snps.bed')
+        cell_vcf_file = os.path.join(dtmp, cell + '.vcf.gz')
+        cell_count_file = os.path.join(dtmp, cell + '.count.bed')
+
+        bcftools_bar.progress(advance=False, msg="Counting germinal SNPs on {}".format(cell))
+        self._call_bcftools(snp_bed, cell_bam, cell_vcf_file, cell_count_file)
+        bcftools_bar.progress(advance=True, msg="Finish germinal SNPs on {}".format(cell))
+
     def gprofile(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         # set related files
         m_fasta = os.path.join(dfasta, 'normal_maternal.fasta')
@@ -1514,7 +1580,7 @@ class HCSIM:
     
     def gfasta(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         tree_json = os.path.join(dprofile, 'tree.json')
         ref_file = os.path.join(dprofile, 'reference.csv')
@@ -1574,7 +1640,7 @@ class HCSIM:
 
     def gfastq(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         tree_json = os.path.join(dprofile, 'tree.json')
     
@@ -1609,7 +1675,7 @@ class HCSIM:
 
     def align(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         tree_json = os.path.join(dprofile, 'tree.json')
     
@@ -1650,7 +1716,7 @@ class HCSIM:
     
     def downsam(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         tree_json = os.path.join(dprofile, 'tree.json')
     
@@ -1706,7 +1772,7 @@ class HCSIM:
 
     def pbam(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         # load cell list from barcode file
         cell_list = []
@@ -1738,7 +1804,7 @@ class HCSIM:
         self.log('pbam BYEBYE')
     def bcbam(self):
         self.log('Setting directories', level='PROGRESS')
-        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, dtmp, dlog = self.setup_dir()
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
 
         self.log('Staring generating barcode bam file...', level='PROGRESS')
         barcode_bam_log = os.path.join(dlog, 'barcode_bam_log.txt')
@@ -1749,6 +1815,165 @@ class HCSIM:
 
         self.log('bcbam BYEBYE')
 
+    def rdr(self):
+        self.log('Setting directories', level='PROGRESS')
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
+
+        self.log('Calculating RDRs', level='PROGRESS')
+
+        # load ref file
+        self._get_chrom_sizes()
+        ref = self._split_chr_to_bins('all')
+
+        # write ref to bed file to drdr without header and index
+        ref['Start'] = ref['Start'] - 1
+        ref.to_csv(os.path.join(dtmp, 'rdr_reference.bed'), sep='\t', index=False, header=False)
+
+        # load cell list from barcode file
+        cell_list = []
+        barcode_file = os.path.join(dprofile, 'barcodes.txt')
+        with open(barcode_file, 'r') as output:
+            for line in output.readlines():
+                if line.strip() != '':
+                    cell_list.append(line.strip())
+        # set jobs
+        jobs = []
+        for cell in cell_list:
+            cell_bam = os.path.join(dcell, cell + '.bam')
+            utils.check_exist(cell_bam=cell_bam)
+            jobs.append((cell, dcell, dtmp, dlog))
+
+        # set parallel jobs for each cell
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=min(self.thread, len(jobs)), initializer=init_cov, initargs=init_args)
+
+        self.log('Computing reads for each cell', level='PROGRESS')
+        for _ in pool.imap_unordered(self._get_coverage_for_each_cell, jobs):
+            pass
+        pool.close()
+        pool.join()
+
+        self.log('Calculating RDRs', level='PROGRESS')
+        count_files = [os.path.join(dtmp, cell + '.coverage.bed') for cell in cell_list]
+        coverage_df = utils.merge_coverage_files(count_files)
+        coverage_df.to_csv(os.path.join(drdr, 'coverage.tsv'), sep='\t')
+
+        # calculate RDRs
+        # rdr = ratio X scale
+        # scale = total reads in normal / total reads in cell
+        # ratio = reads count in each bin in cell / reads count in each bin in normal
+        # finally, rdr is a matrix same as coverage_df, but value is rar value
+        normal_cov = coverage_df['normal_cell1']
+        normal_sum = coverage_df['normal_cell1'].sum()
+        coverage_sums = coverage_df.sum(axis=0)
+        scale = normal_sum / coverage_sums
+        ratio = coverage_df / normal_cov.values.reshape(-1, 1)
+        rdr = ratio * scale.values
+        rdr_df = pd.DataFrame(rdr, index=coverage_df.index, columns=coverage_df.columns).round(4)
+        rdr_df.to_csv(os.path.join(drdr, 'rdr.tsv'), sep='\t')
+
+        self.log('RDR BYEBYE')
+    
+    def baf(self):
+        self.log('Setting directories', level='PROGRESS')
+        dprofile, dfasta, dfastq, dclone, dcell, dbarcode, drdr, dbaf, dtmp, dlog = self.setup_dir()
+        
+        self.log('Calculating BAFs', level='PROGRESS')
+        
+        # load ref file
+        self._get_chrom_sizes()
+        ref = self._split_chr_to_bins('all')
+
+        # handle phased snps
+        allele_phase_file = os.path.join(dprofile, 'snp_phases.csv')
+        phased_snps = utils.read_phase(allele_phase_file)
+    
+        # load cell list from barcode file
+        cell_list = []
+        barcode_file = os.path.join(dprofile, 'barcodes.txt')
+        with open(barcode_file, 'r') as output:
+            for line in output.readlines():
+                if line.strip() != '':
+                    cell_list.append(line.strip())
+        # set jobs
+        jobs = []
+        for cell in cell_list:
+            cell_bam = os.path.join(dcell, cell + '.bam')
+            utils.check_exist(cell_bam=cell_bam)
+            jobs.append((cell, dcell, dtmp, dlog))
+
+        # set parallel jobs for each cell
+        lock = Lock()
+        counter = Value('i', 0)
+        init_args = (lock, counter, len(jobs))
+        pool = Pool(processes=min(self.thread, len(jobs)), initializer=init_bcftools, initargs=init_args)
+
+        self.log('Counting germinal SNPs for each cell', level='PROGRESS')
+        for _ in pool.imap_unordered(self._call_bcftools_for_each_cell, jobs):
+            pass
+        pool.close()
+        pool.join()
+
+        # merge all count files to A-allele and B-allele matrix file
+        self.log('Calculating BAFs', level='PROGRESS')
+        count_files = [os.path.join(dtmp, cell + '.count.bed') for cell in cell_list]
+
+        # merge cout files to a_allele, b_allele bed files
+        a_allele_bed = os.path.join(dtmp, 'a_allele.bed')
+        b_allele_bed = os.path.join(dtmp, 'b_allele.bed')
+        with open(a_allele_bed, 'w') as a_allele, open(b_allele_bed, 'w') as b_allele:
+            for count_file in count_files:
+                # get cell name from path  of count file
+                cell = os.path.basename(count_file).split(".")[0]
+                snps_counts = utils.process_snp_count_file(count_file, phased_snps)
+                for snp, counts in snps_counts.items():
+                    chrom, pos = snp
+                    a_allele.write('\t'.join([chrom, str(pos), str(pos+1), cell, str(counts[0])]) + '\n')
+                    b_allele.write('\t'.join([chrom, str(pos), str(pos+1), cell, str(counts[1])]) + '\n')
+        
+        ref_bed = os.path.join(dtmp, 'baf_reference.bed')
+        ref.to_csv(ref_bed, sep='\t', index=False, header=False)
+
+        # use bedtools to get intersect of a_allele, b_allele and reference bed files
+        a_allele_intersect = os.path.join(dtmp, 'a_allele_intersect.bed')
+        b_allele_intersect = os.path.join(dtmp, 'b_allele_intersect.bed')
+        bedtools_log = os.path.join(dlog, 'bedtools_log.txt')
+        cmd = f"{self.bedtools} intersect -a {ref_bed} -b {a_allele_bed} -wa -wb > {a_allele_intersect}"
+        utils.runcmd(cmd, bedtools_log)
+        cmd = f"{self.bedtools} intersect -a {ref_bed} -b {b_allele_bed} -wa -wb > {b_allele_intersect}"
+        utils.runcmd(cmd, bedtools_log)
+
+        # read intersected.bed file
+        cols = ['bin_chrom', 'bin_start', 'bin_end', 'snp_chrom', 'snp_start', 'snp_end', 'cell', 'count']
+        a_allele_intersect_data = pd.read_csv(a_allele_intersect, sep='\t', names=cols)
+        b_allele_intersect_data = pd.read_csv(b_allele_intersect, sep='\t', names=cols)
+
+        # create bin column
+        a_allele_intersect_data['bin'] = a_allele_intersect_data['bin_chrom'] + ':' + a_allele_intersect_data['bin_start'].astype(str) + '-' + a_allele_intersect_data['bin_end'].astype(str)
+        b_allele_intersect_data['bin'] = b_allele_intersect_data['bin_chrom'] + ':' + b_allele_intersect_data['bin_start'].astype(str) + '-' + b_allele_intersect_data['bin_end'].astype(str)
+
+        # calculate total count for each bin
+        a_allele_count = a_allele_intersect_data.groupby(['bin', 'cell'])['count'].sum().unstack(fill_value=0)
+        b_allele_count = b_allele_intersect_data.groupby(['bin', 'cell'])['count'].sum().unstack(fill_value=0)
+        baf = b_allele_count / (a_allele_count + b_allele_count)
+
+        # store result
+        a_allele_file = os.path.join(dbaf, 'a_allele.tsv')
+        b_allele_file = os.path.join(dbaf, 'b_allele.tsv')
+        baf_matrix_file = os.path.join(dbaf, 'baf.tsv')
+
+        # a_allele_martrix, b_allele_martrix, baf_matrix = merge_count_files(count_files, phased_snps_filtered, ref)
+        a_allele_count = a_allele_count.sort_values(by="bin", key=lambda col: col.map(utils.extract_chr_and_start)).round(4)
+        b_allele_count = b_allele_count.sort_values(by="bin", key=lambda col: col.map(utils.extract_chr_and_start)).round(4)
+        baf = baf.sort_values(by="bin", key=lambda col: col.map(utils.extract_chr_and_start)).round(4)
+        a_allele_count.to_csv(a_allele_file, sep='\t')
+        b_allele_count.to_csv(b_allele_file, sep='\t')
+        baf.to_csv(baf_matrix_file, sep='\t')
+
+        self.log('BAF BYEBYE')
+
     def sim(self):
         self.gprofile()
         self.gfasta()
@@ -1757,3 +1982,5 @@ class HCSIM:
         self.downsam()
         self.pbam()
         self.bcbam()
+        self.rdr()
+        self.baf()

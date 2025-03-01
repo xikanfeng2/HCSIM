@@ -3,6 +3,7 @@ import sys
 import random
 import datetime
 import subprocess as sp
+import pandas as pd
 import numbers
 
 # check part
@@ -391,45 +392,132 @@ def runcmd(cmd, log):
         except Exception as e:
             print(f"Error executing command: {cmd}\n{e}")
 
-# backup
-# def runcmd(cmd, xdir, out=None, log="log"):
-#     """
-#     在指定目录下执行一个命令，并将输出和错误日志保存到文件中。
-#     :param cmd: 要执行的命令字符串。
-#     :param xdir: 执行命令的目录路径。
-#     :param out: 选参数，指定输出文件的名称。如果为 None，则不保存标准输出。
-#     :param log: 日志文件的名称，默认为 "log"。
-#     :return:
-#     """
-#     j = os.path.join
-#     tmp = log + '_TMP'
+def read_phase(allele_phase_file):
+    # Use defaultdict to create a dictionary where each key maps to another dictionary
+    phased = {}
+    
+    # Read the allele phase file use pandas
+    phased_df = pd.read_csv(allele_phase_file, header=None)
+    for index, row in phased_df.iterrows():
+        chrom, pos, phase = row[0], row[1], row[4]
+        phased[(chrom, pos)] = phase
+    
+    return phased
 
+def process_snp_count_file(snp_count_file, phased_snps):
+    # process the SNP count file
+    snps_counts = {}
+    with open(snp_count_file, 'r') as input:
+        for line in input:
+            fields = line.split("\t")
+            chrom, pos, ref, alt, ad = fields[:5]
+            pos = int(pos)
+            ad = list(map(int, ad.split(",")))  # Convert AD values to integers
 
-#     # 1. 确定标准输出文件，如果 out 参数为 None，则使用 os.devnull
-#     sout_path = j(xdir, out) if out else os.devnull
-#     tmp_path = j(xdir, tmp)
-#     log_path = j(xdir, log)
+            # Skip positions not in phased SNPs
+            if (chrom, pos) not in phased_snps:
+                continue
 
-#     # 2. 使用 with open 自动管理文件句柄
-#     with open(sout_path, 'a') as sout, open(tmp_path, 'a') as serr:
-#         # 使用 subprocess.Popen 启动子进程执行命令
-#         proc = sp.Popen(cmd, shell=True, stdout=sout, stderr=sp.PIPE)
+            # Determine A and B alleles based on the phase
+            phase = phased_snps[(chrom, pos)]
+            a_count, b_count = 0, 0
 
-#         # 逐行读取标准错误输出并写入到 stderr 和临时文件
-#         for line in iter(proc.stderr.readline, b''):  # readline 返回字节数据
-#             sys.stderr.write(line.decode())  # 将字节解码为字符串并写入标准错误
-#             serr.write(line.decode())  # 将标准错误写入临时文件
+            if phase == "0|1":
+                # A allele is REF, B allele is ALT
+                a_count = ad[0]
+                b_count = ad[1] if len(ad) > 1 else 0
+            elif phase == "1|0":
+                # A allele is ALT, B allele is REF
+                a_count = ad[1] if len(ad) > 1 else 0
+                b_count = ad[0]
 
-#         # 等待子进程完成
-#         proc.stderr.close()
-#         proc.wait()
+            # Store counts
+            snps_counts[(chrom, pos)] = (a_count, b_count)
+    return snps_counts
 
-#     # 读取临时文件内容并清理 ANSI 转义序列
-#     with open(tmp_path, 'r') as i, open(log_path, 'a') as o:
-#         for line in i:
-#             if 'Progress' not in line:
-#                 # 移除 ANSI 转义序列
-#                 o.write(re.sub(r'\033\[[0-9]*m', '', line))
+def write_snp_bed_file(snp_bed_file, phased_snps):
+    # Write the phased SNPs to a BED file
+    with open(snp_bed_file, 'w') as output:
+        for snp, phase in phased_snps.items():
+            chrom, pos = snp
+            # phased snp is 1-based and the BED file must use 0-based start positions and 1-based end positions
+            output.write('{}\t{}\t{}\n'.format(chrom, pos-1, pos))
 
-#     # 删除临时文件
-#     os.remove(tmp_path)
+def assign_bin(row, ref):
+    # Find the bin where the SNP belongs
+    bin_row = ref[
+        (ref['Chromosome'] == row['chrom']) & 
+        (ref['Start'] <= row['pos']) & 
+        (ref['End'] >= row['pos'])
+    ]
+    if not bin_row.empty:
+        return f"{row['chrom']}:{bin_row.iloc[0]['Start']}-{bin_row.iloc[0]['End']}"
+    return None
+
+def merge_count_files(count_files, phased_snps, ref):
+    # merge count files to a matrix, row index is chrom-pos, column index is cell
+    a_allele_counts = []
+    b_allele_counts = []
+    for count_file in count_files:
+        # get cell name from path  of count file
+        cell = os.path.basename(count_file).split(".")[0]
+        snps_counts = process_snp_count_file(count_file, phased_snps)
+        for snp, counts in snps_counts.items():
+            chrom, pos = snp
+            index = f"{chrom}-{pos}"
+            a_allele_counts.append((chrom, pos, cell, counts[0]))
+            b_allele_counts.append((chrom, pos, cell, counts[1]))
+    a_allele_counts = pd.DataFrame(a_allele_counts, columns=['chrom', 'pos', 'cell', 'count'])
+    b_allele_counts = pd.DataFrame(b_allele_counts, columns=['chrom', 'pos', 'cell', 'count'])
+
+    a_allele_counts['bin'] = a_allele_counts.apply(assign_bin, axis=1, ref=ref)
+
+    # Step 4: Group by bins and cells, summing the counts
+    a_allele_counts_grouped = a_allele_counts.groupby(['bin', 'cell'])['count'].sum().reset_index()
+    b_allele_counts_grouped = b_allele_counts.groupby(['bin', 'cell'])['count'].sum().reset_index()
+
+    # Step 5: Pivot to create the count matrix
+    a_allele_martrix = a_allele_counts_grouped.pivot(index='bin', columns='cell', values='count')
+    b_allele_martrix = b_allele_counts_grouped.pivot(index='bin', columns='cell', values='count')
+
+    # Step 6: Fill missing values with 0
+    a_allele_martrix = a_allele_martrix.fillna(0)
+    b_allele_martrix = b_allele_martrix.fillna(0)
+
+    baf_matrix = b_allele_martrix / (a_allele_martrix + b_allele_martrix)
+    return a_allele_martrix, b_allele_martrix, baf_matrix
+
+def extract_chr_and_start(bin_value):
+    chrom, positions = bin_value.split(":")
+    start, _ = positions.split("-")
+    
+    # extract chromosome
+    if chrom.startswith("chr"):
+        chrom = chrom[3:]
+    chrom = int(chrom) if chrom.isdigit() else chrom
+    
+    # extract start position
+    start = int(start)
+    
+    return chrom, start
+
+def merge_coverage_files(coverage_files):
+    merged_df = pd.DataFrame()
+    # merge coverage files to a matrix, row index is chrom-pos, column index is cell
+    for cov_file in coverage_files:
+        cell_name = os.path.basename(cov_file).split(".")[0]
+        
+        df = pd.read_csv(cov_file, sep="\t", header=None, names=["chr", "start", "end", "coverage"])
+        
+        df["bin"] = df["chr"] + ":" + df["start"].astype(str) + "-" + df["end"].astype(str)
+        
+        df = df[["bin", "coverage"]].set_index("bin")
+        df.rename(columns={"coverage": cell_name}, inplace=True)
+        
+        if merged_df.empty:
+            merged_df = df
+        else:
+            merged_df = merged_df.join(df, how="outer")
+    
+    merged_df = merged_df.sort_values(by="bin", key=lambda col: col.map(extract_chr_and_start))
+    return merged_df

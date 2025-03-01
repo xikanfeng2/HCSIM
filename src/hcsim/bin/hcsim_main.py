@@ -51,6 +51,14 @@ def generate_barcode_bam(args):
     hcsim = create_hcsim_from_args(args)
     hcsim.bcbam()
 
+def cal_rdr(args):
+    hcsim = create_hcsim_from_args(args)
+    hcsim.rdr()
+
+def cal_baf(args):
+    hcsim = create_hcsim_from_args(args)
+    hcsim.baf()
+
 def add_shared_arguments(parser):
     # Basics, Inputs and Executables
     parser.add_argument('-r', '--ref-genome', type=str, metavar="", help='Path to reference genome [required]')
@@ -181,6 +189,20 @@ def main():
     bcbam_parser.add_argument('--samtools', type=str, required=False, default='samtools', metavar="", help='Path to the executable \"samtools\" file (default: in $PATH)')
     bcbam_parser.add_argument('--bcftools', type=str, required=False, default='bcftools', metavar="", help='Path to the executable \"bcftools\" file (default: in $PATH)')
     bcbam_parser.set_defaults(func=generate_barcode_bam)
+
+    # rdr subcommand
+    rdr_parser = subparsers.add_parser("rdr", help="Computing RDRs.")
+    add_shared_arguments(rdr_parser)
+    rdr_parser.add_argument('--bedtools', type=str, required=False, default='bedtools', metavar="", help='Path to the executable \"bedtools\" file (default: in $PATH)')
+    rdr_parser.set_defaults(func=cal_rdr)
+
+    # baf subcommand
+    baf_parser = subparsers.add_parser("baf", help="Computing BAFs.")
+    add_shared_arguments(baf_parser)
+    baf_parser.add_argument('--bcftools', type=str, required=False, default='bcftools', metavar="", help='Path to the executable \"bcftools\" file (default: in $PATH)')
+    baf_parser.add_argument('--bedtools', type=str, required=False, default='bedtools', metavar="", help='Path to the executable \"bedtools\" file (default: in $PATH)')
+    baf_parser.set_defaults(func=cal_baf)
+
 
     # 解析命令行参数
     args = parser.parse_args()
