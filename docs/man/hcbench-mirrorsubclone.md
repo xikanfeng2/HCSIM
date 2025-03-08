@@ -29,7 +29,7 @@ options:
 2. **Tool Names**:
    - The number of tool names must match the number of CNA files provided.
    - Each tool name corresponds to one CNA file.
-3. **Copy Number Changes File **:
+3. **Copy Number Changes File**:
    - A CSV file containing ground truth copy number status changes.
 4. **Output Directory**:
    - Optional parameter, default path is `./output`.
